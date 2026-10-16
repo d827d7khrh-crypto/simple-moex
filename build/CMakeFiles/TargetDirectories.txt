@@ -1,0 +1,10 @@
+/Users/alex/Work/simple-moex/build/CMakeFiles/edit_cache.dir
+/Users/alex/Work/simple-moex/build/CMakeFiles/rebuild_cache.dir
+/Users/alex/Work/simple-moex/build/tests/CMakeFiles/edit_cache.dir
+/Users/alex/Work/simple-moex/build/tests/CMakeFiles/rebuild_cache.dir
+/Users/alex/Work/simple-moex/build/tests/libxml++/CMakeFiles/xml_test.dir
+/Users/alex/Work/simple-moex/build/tests/libxml++/CMakeFiles/edit_cache.dir
+/Users/alex/Work/simple-moex/build/tests/libxml++/CMakeFiles/rebuild_cache.dir
+/Users/alex/Work/simple-moex/build/src/CMakeFiles/app.dir
+/Users/alex/Work/simple-moex/build/src/CMakeFiles/edit_cache.dir
+/Users/alex/Work/simple-moex/build/src/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/Users/alex/Work/simple-moex/build/tests/libxml++",
+  "command": "/opt/local/bin/clang++  -isystem /opt/local/include/libxml++-5.0 -isystem /opt/local/lib/libxml++-5.0/include -isystem /opt/local/include/libxml2 -isystem /opt/local/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/xml_test.dir/main.cpp.o -c /Users/alex/Work/simple-moex/tests/libxml++/main.cpp",
+  "file": "/Users/alex/Work/simple-moex/tests/libxml++/main.cpp",
+  "output": "tests/libxml++/CMakeFiles/xml_test.dir/main.cpp.o"
+},
+{
+  "directory": "/Users/alex/Work/simple-moex/build/src",
+  "command": "/opt/local/bin/clang++  -isystem /opt/local/include/libxml++-5.0 -isystem /opt/local/lib/libxml++-5.0/include -isystem /opt/local/include/libxml2 -isystem /opt/local/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/app.dir/main.cpp.o -c /Users/alex/Work/simple-moex/src/main.cpp",
+  "file": "/Users/alex/Work/simple-moex/src/main.cpp",
+  "output": "src/CMakeFiles/app.dir/main.cpp.o"
+}
+]
