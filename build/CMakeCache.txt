@@ -14,6 +14,9 @@
 # EXTERNAL cache entries
 ########################
 
+//The directory containing a CMake configuration file for Boost.
+Boost_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/Boost-1.91.0
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=CMAKE_ADDR2LINE-NOTFOUND
 
@@ -239,6 +242,30 @@ PKG_CONFIG_ARGN:STRING=
 //pkg-config executable
 PKG_CONFIG_EXECUTABLE:FILEPATH=/opt/local/bin/pkg-config
 
+//The directory containing a CMake configuration file for boost_atomic.
+boost_atomic_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_atomic-1.91.0
+
+//The directory containing a CMake configuration file for boost_chrono.
+boost_chrono_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_chrono-1.91.0
+
+//The directory containing a CMake configuration file for boost_container.
+boost_container_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_container-1.91.0
+
+//The directory containing a CMake configuration file for boost_date_time.
+boost_date_time_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_date_time-1.91.0
+
+//The directory containing a CMake configuration file for boost_exception.
+boost_exception_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_exception-1.91.0
+
+//The directory containing a CMake configuration file for boost_headers.
+boost_headers_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_headers-1.91.0
+
+//The directory containing a CMake configuration file for boost_program_options.
+boost_program_options_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_program_options-1.91.0
+
+//The directory containing a CMake configuration file for boost_thread.
+boost_thread_DIR:PATH=/opt/local/libexec/boost/1.91/lib/cmake/boost_thread-1.91.0
+
 //Path to a library.
 pkgcfg_lib_LIBXMLXX_xml++-5.0:FILEPATH=/opt/local/lib/libxml++-5.0.dylib
 
@@ -341,6 +368,8 @@ CMAKE_GENERATOR_INSTANCE:INTERNAL=
 CMAKE_GENERATOR_PLATFORM:INTERNAL=
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
+//Test CMAKE_HAVE_LIBC_PTHREAD
+CMAKE_HAVE_LIBC_PTHREAD:INTERNAL=1
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/Users/alex/Work/simple-moex
@@ -363,7 +392,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=4
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=7
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -410,6 +439,8 @@ CMAKE_UNAME:INTERNAL=/usr/bin/uname
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Details about finding PkgConfig
 FIND_PACKAGE_MESSAGE_DETAILS_PkgConfig:INTERNAL=[/opt/local/bin/pkg-config][v0.29.2()]
+//Details about finding Threads
+FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 LIBXMLXX_CFLAGS:INTERNAL=-I/opt/local/include/libxml++-5.0;-I/opt/local/lib/libxml++-5.0/include;-I/opt/local/include/libxml2;-I/opt/local/include
 LIBXMLXX_CFLAGS_I:INTERNAL=
 LIBXMLXX_CFLAGS_OTHER:INTERNAL=
@@ -451,6 +482,22 @@ PKG_CONFIG_ARGN-ADVANCED:INTERNAL=1
 PKG_CONFIG_EXECUTABLE-ADVANCED:INTERNAL=1
 __pkg_config_arguments_LIBXMLXX:INTERNAL=REQUIRED;IMPORTED_TARGET;libxml++-5.0
 __pkg_config_checked_LIBXMLXX:INTERNAL=1
+//ADVANCED property for variable: boost_atomic_DIR
+boost_atomic_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_chrono_DIR
+boost_chrono_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_container_DIR
+boost_container_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_date_time_DIR
+boost_date_time_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_exception_DIR
+boost_exception_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_headers_DIR
+boost_headers_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_program_options_DIR
+boost_program_options_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_thread_DIR
+boost_thread_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: pkgcfg_lib_LIBXMLXX_xml++-5.0
 pkgcfg_lib_LIBXMLXX_xml++-5.0-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: pkgcfg_lib_LIBXMLXX_xml2

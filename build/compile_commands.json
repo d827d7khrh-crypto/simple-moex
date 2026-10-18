@@ -1,14 +1,38 @@
 [
 {
+  "directory": "/Users/alex/Work/simple-moex/build/src",
+  "command": "/opt/local/bin/clang++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/Users/alex/Work/simple-moex/src/feedhandler -I/Users/alex/Work/simple-moex/src/fix_fast_parser -I/Users/alex/Work/simple-moex/src/misc -isystem /opt/local/libexec/boost/1.91/include -isystem /opt/local/include/libxml++-5.0 -isystem /opt/local/lib/libxml++-5.0/include -isystem /opt/local/include/libxml2 -isystem /opt/local/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/app.dir/main.cpp.o -c /Users/alex/Work/simple-moex/src/main.cpp",
+  "file": "/Users/alex/Work/simple-moex/src/main.cpp",
+  "output": "src/CMakeFiles/app.dir/main.cpp.o"
+},
+{
+  "directory": "/Users/alex/Work/simple-moex/build/src/feedhandler",
+  "command": "/opt/local/bin/clang++  -I/opt/local/libexec/boost/1.91/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/feedhandler.dir/udp_multicast_receiver.cpp.o -c /Users/alex/Work/simple-moex/src/feedhandler/udp_multicast_receiver.cpp",
+  "file": "/Users/alex/Work/simple-moex/src/feedhandler/udp_multicast_receiver.cpp",
+  "output": "src/feedhandler/CMakeFiles/feedhandler.dir/udp_multicast_receiver.cpp.o"
+},
+{
+  "directory": "/Users/alex/Work/simple-moex/build/src/fix_fast_parser",
+  "command": "/opt/local/bin/clang++  -I/opt/local/include/libxml++-5.0 -I/opt/local/lib/libxml++-5.0/include -I/opt/local/include/libxml2 -I/opt/local/include -I/opt/local/libexec/boost/1.91/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/fix_fast_parser.dir/fix_fast_parser.cpp.o -c /Users/alex/Work/simple-moex/src/fix_fast_parser/fix_fast_parser.cpp",
+  "file": "/Users/alex/Work/simple-moex/src/fix_fast_parser/fix_fast_parser.cpp",
+  "output": "src/fix_fast_parser/CMakeFiles/fix_fast_parser.dir/fix_fast_parser.cpp.o"
+},
+{
+  "directory": "/Users/alex/Work/simple-moex/build/src/udp_mcast",
+  "command": "/opt/local/bin/clang++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/Users/alex/Work/simple-moex/src/udp_mcast -isystem /opt/local/libexec/boost/1.91/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/udp_mcst.dir/main.cpp.o -c /Users/alex/Work/simple-moex/src/udp_mcast/main.cpp",
+  "file": "/Users/alex/Work/simple-moex/src/udp_mcast/main.cpp",
+  "output": "src/udp_mcast/CMakeFiles/udp_mcst.dir/main.cpp.o"
+},
+{
+  "directory": "/Users/alex/Work/simple-moex/build/src/udp_mcast",
+  "command": "/opt/local/bin/clang++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/Users/alex/Work/simple-moex/src/udp_mcast -isystem /opt/local/libexec/boost/1.91/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/udp_rec.dir/receiver.cpp.o -c /Users/alex/Work/simple-moex/src/udp_mcast/receiver.cpp",
+  "file": "/Users/alex/Work/simple-moex/src/udp_mcast/receiver.cpp",
+  "output": "src/udp_mcast/CMakeFiles/udp_rec.dir/receiver.cpp.o"
+},
+{
   "directory": "/Users/alex/Work/simple-moex/build/tests/libxml++",
   "command": "/opt/local/bin/clang++  -isystem /opt/local/include/libxml++-5.0 -isystem /opt/local/lib/libxml++-5.0/include -isystem /opt/local/include/libxml2 -isystem /opt/local/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/xml_test.dir/main.cpp.o -c /Users/alex/Work/simple-moex/tests/libxml++/main.cpp",
   "file": "/Users/alex/Work/simple-moex/tests/libxml++/main.cpp",
   "output": "tests/libxml++/CMakeFiles/xml_test.dir/main.cpp.o"
-},
-{
-  "directory": "/Users/alex/Work/simple-moex/build/src",
-  "command": "/opt/local/bin/clang++  -isystem /opt/local/include/libxml++-5.0 -isystem /opt/local/lib/libxml++-5.0/include -isystem /opt/local/include/libxml2 -isystem /opt/local/include -g -std=gnu++23 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -o CMakeFiles/app.dir/main.cpp.o -c /Users/alex/Work/simple-moex/src/main.cpp",
-  "file": "/Users/alex/Work/simple-moex/src/main.cpp",
-  "output": "src/CMakeFiles/app.dir/main.cpp.o"
 }
 ]

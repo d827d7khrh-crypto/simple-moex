@@ -1,0 +1,2 @@
+/opt/local/bin/ar qc libfix_fast_parser.a CMakeFiles/fix_fast_parser.dir/fix_fast_parser.cpp.o
+/opt/local/bin/ranlib libfix_fast_parser.a

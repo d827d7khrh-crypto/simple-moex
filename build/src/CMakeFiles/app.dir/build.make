@@ -95,8 +95,15 @@ app_EXTERNAL_OBJECTS =
 
 src/app: src/CMakeFiles/app.dir/main.cpp.o
 src/app: src/CMakeFiles/app.dir/build.make
+src/app: src/feedhandler/libfeedhandler.a
+src/app: /opt/local/libexec/boost/1.91/lib/libboost_thread-mt-a64.dylib
 src/app: /opt/local/lib/libxml++-5.0.dylib
 src/app: /opt/local/lib/libxml2.dylib
+src/app: /opt/local/libexec/boost/1.91/lib/libboost_atomic-mt-a64.dylib
+src/app: /opt/local/libexec/boost/1.91/lib/libboost_chrono-mt-a64.dylib
+src/app: /opt/local/libexec/boost/1.91/lib/libboost_date_time-mt-a64.dylib
+src/app: /opt/local/libexec/boost/1.91/lib/libboost_program_options-mt-a64.dylib
+src/app: /opt/local/libexec/boost/1.91/lib/libboost_container-mt-a64.dylib
 src/app: src/CMakeFiles/app.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/alex/Work/simple-moex/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable app"
 	cd /Users/alex/Work/simple-moex/build/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/app.dir/link.txt --verbose=$(VERBOSE)

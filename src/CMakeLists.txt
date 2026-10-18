@@ -1,6 +1,14 @@
+add_subdirectory(feedhandler)
+add_subdirectory(fix_fast_parser)
 
-# Добавляем наш исполняемый файл и исходный код
-add_executable(app main.cpp)
+add_executable(app
+    main.cpp
+)
+target_link_libraries(app PRIVATE 
+    project_headers
+    feedhandler
+    PkgConfig::LIBXMLXX
+    Boost::thread
+)
 
-# Линкуем библиотеку libxml++, которую корневой CMake уже нашел
-target_link_libraries(app PRIVATE PkgConfig::LIBXMLXX)
+add_subdirectory(udp_mcast)

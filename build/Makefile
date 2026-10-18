@@ -117,19 +117,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named xml_test
-
-# Build rule for target.
-xml_test: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 xml_test
-.PHONY : xml_test
-
-# fast build rule for target.
-xml_test/fast:
-	$(MAKE) $(MAKESILENT) -f tests/libxml++/CMakeFiles/xml_test.dir/build.make tests/libxml++/CMakeFiles/xml_test.dir/build
-.PHONY : xml_test/fast
-
-#=============================================================================
 # Target rules for targets named app
 
 # Build rule for target.
@@ -142,6 +129,71 @@ app/fast:
 	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/app.dir/build.make src/CMakeFiles/app.dir/build
 .PHONY : app/fast
 
+#=============================================================================
+# Target rules for targets named feedhandler
+
+# Build rule for target.
+feedhandler: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 feedhandler
+.PHONY : feedhandler
+
+# fast build rule for target.
+feedhandler/fast:
+	$(MAKE) $(MAKESILENT) -f src/feedhandler/CMakeFiles/feedhandler.dir/build.make src/feedhandler/CMakeFiles/feedhandler.dir/build
+.PHONY : feedhandler/fast
+
+#=============================================================================
+# Target rules for targets named fix_fast_parser
+
+# Build rule for target.
+fix_fast_parser: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fix_fast_parser
+.PHONY : fix_fast_parser
+
+# fast build rule for target.
+fix_fast_parser/fast:
+	$(MAKE) $(MAKESILENT) -f src/fix_fast_parser/CMakeFiles/fix_fast_parser.dir/build.make src/fix_fast_parser/CMakeFiles/fix_fast_parser.dir/build
+.PHONY : fix_fast_parser/fast
+
+#=============================================================================
+# Target rules for targets named udp_mcst
+
+# Build rule for target.
+udp_mcst: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 udp_mcst
+.PHONY : udp_mcst
+
+# fast build rule for target.
+udp_mcst/fast:
+	$(MAKE) $(MAKESILENT) -f src/udp_mcast/CMakeFiles/udp_mcst.dir/build.make src/udp_mcast/CMakeFiles/udp_mcst.dir/build
+.PHONY : udp_mcst/fast
+
+#=============================================================================
+# Target rules for targets named udp_rec
+
+# Build rule for target.
+udp_rec: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 udp_rec
+.PHONY : udp_rec
+
+# fast build rule for target.
+udp_rec/fast:
+	$(MAKE) $(MAKESILENT) -f src/udp_mcast/CMakeFiles/udp_rec.dir/build.make src/udp_mcast/CMakeFiles/udp_rec.dir/build
+.PHONY : udp_rec/fast
+
+#=============================================================================
+# Target rules for targets named xml_test
+
+# Build rule for target.
+xml_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 xml_test
+.PHONY : xml_test
+
+# fast build rule for target.
+xml_test/fast:
+	$(MAKE) $(MAKESILENT) -f tests/libxml++/CMakeFiles/xml_test.dir/build.make tests/libxml++/CMakeFiles/xml_test.dir/build
+.PHONY : xml_test/fast
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -151,6 +203,10 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... app"
+	@echo "... feedhandler"
+	@echo "... fix_fast_parser"
+	@echo "... udp_mcst"
+	@echo "... udp_rec"
 	@echo "... xml_test"
 .PHONY : help
 

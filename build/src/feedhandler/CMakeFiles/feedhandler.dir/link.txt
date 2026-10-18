@@ -1,0 +1,2 @@
+/opt/local/bin/ar qc libfeedhandler.a CMakeFiles/feedhandler.dir/udp_multicast_receiver.cpp.o
+/opt/local/bin/ranlib libfeedhandler.a
