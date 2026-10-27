@@ -1,9 +1,10 @@
-#include "xml_test.h"
+#include "fix_fast_parser.h"
+#include "misc_test.h"
 
 void test_parse_xml_files (std::string filepath)
 {
     try {
-        fix::fast::FastTemplatesParser parser;
+        fast::FastTemplatesParser parser;
 
         if (!parser.parse_file(filepath)) {
             std::cerr << "Failed to parse: " << parser.get_error() << "\n";
@@ -25,16 +26,14 @@ void test_parse_xml_files (std::string filepath)
             // Показываем поля с константами
             for (const auto& f : tpl.fields) {
                 if (f.is_constant()) {
-                    std::cout << "    [CONST] " << f.name
-                              << " (tag=" << f.id << ") = "
-                              << *f.constant_value << "\n";
+                    std::cout << "    [CONST] " << f.name << " (tag=" << f.id
+                              << ") = " << *f.constant_value << "\n";
                 }
             }
 
             // Показываем последовательности
             for (const auto& s : tpl.sequences) {
-                std::cout << "    Sequence: " << s.name
-                          << " (count_tag=" << s.length_tag
+                std::cout << "    Sequence: " << s.name << " (count_tag=" << s.length_tag
                           << ", fields=" << s.fields.size()
                           << ", nested_sequences=" << s.nested_sequences.size() << ")\n";
                 // Вывод вложенных последовательностей
@@ -59,7 +58,6 @@ void test_parse_xml_files (std::string filepath)
             std::cout << "=== X-OLR-FOND ===\n";
             snapshot->print(std::cout, 0);
         }
-
     }
     catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";

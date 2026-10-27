@@ -19,6 +19,6 @@ target_include_directories(udp_rec PRIVATE ${Boost_INCLUDE_DIRS})
 target_include_directories(udp_rec PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(udp_rec PRIVATE
-    Boost::program_options	
+    Boost::program_options
     Boost::thread
 )

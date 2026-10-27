@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(x-moex LANGUAGES C CXX)
+project(feedhandler LANGUAGES C CXX)
 
 if(POLICY CMP0144)
     cmake_policy(SET CMP0144 NEW)
@@ -9,9 +9,9 @@ if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
-# Устанавливаем стандарт C++20 (можно изменить на 17 или 23)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 # Указываем CMake искать заголовочные файлы и библиотеки в MacPorts
 list(APPEND CMAKE_PREFIX_PATH "/opt/local/libexec/boost/1.91/lib/cmake/Boost-1.91.0")
@@ -23,6 +23,8 @@ set(Boost_NO_SYSTEM_PATHS ON) # Запрещаем CMake смотреть в д�
 # Находим инструмент PkgConfig
 find_package(PkgConfig REQUIRED)
 find_package(Boost REQUIRED CONFIG COMPONENTS thread program_options)
+find_package(mFAST REQUIRED)
+find_package(toml11 REQUIRED)
 
 pkg_check_modules(LIBXMLXX REQUIRED IMPORTED_TARGET libxml++-5.0)
 
@@ -30,10 +32,12 @@ pkg_check_modules(LIBXMLXX REQUIRED IMPORTED_TARGET libxml++-5.0)
 add_library(project_headers INTERFACE)
 
 target_include_directories(project_headers INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/feedhandler>"
-    "$<INSTALL_INTERFACE:src/feedhandler>"
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/receiver>"
+    "$<INSTALL_INTERFACE:src/receiver>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/fix_fast_parser>"
     "$<INSTALL_INTERFACE:src/fix_fast_parser>"
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/config>"
+    "$<INSTALL_INTERFACE:src/config>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/misc>"
     "$<INSTALL_INTERFACE:src/misc>"
 )

@@ -1,75 +1,87 @@
-#include "fix_fast_parser.h"
-#include "udp_multicast_receiver.h"
-
 #include <iostream>
 #include <string>
 #include <csignal>
-#include <atomic>
+#include <format>
+#include "udp_multicast_receiver.h"
+#include "fast_message_handler.h"
+#include "config.h"
 
-std::atomic<bool> g_running{true};
-
-void signal_handler(int)
+int main (int argc, char** argv)
 {
-    g_running = false;
-}
-
-void test_parse_xml_files(std::string filepath);
-
-int main(int argc, char** argv)
-{
-    std::signal(SIGINT, signal_handler);
-    std::signal(SIGTERM, signal_handler);
-
-    // ================================================================
-    // Пример 1: UDP Multicast Receiver (раскомментируйте для запуска)
-    // ================================================================
-#if 1
-    UdpMulticastManager::DataHandler data_handler =
-        [](const std::string& multicast_group,
-           uint16_t port,
-           const char* data,
-           std::size_t length) {
-            std::cout << "[" << multicast_group << ":" << port << "] "
-                      << "Received " << length << " bytes: "
-                      << std::string(data, std::min(length, std::size_t(256)))
-                      << (length > 256 ? "..." : "") << "\n";
-        };
-
-    UdpMulticastManager manager(data_handler);
-
-    // Добавляем несколько мультикаст-групп
-    // Стандартные мультикаст-адреса: 224.0.0.0 – 239.255.255.255
-    manager.add_receiver("239.255.1.1", 5555);
-    manager.add_receiver("239.255.1.2", 5556);
-    manager.add_receiver("239.255.1.3", 5557);
-
-    // Запускаем менеджер (создаёт потоки и начинает приём)
-    manager.start();
-
-    // Ждём сигнал остановки
-    std::cout << "Multicast receiver running. Press Ctrl+C to stop.\n";
-    while (g_running) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    auto opt_result = program_options::try_get_options(argc, argv);
+    if (!opt_result.second.empty()) {
+        std::cerr << opt_result.second << std::endl;
+        return 1;
     }
 
-    std::cout << "Stopping...\n";
-    manager.stop();
-    std::cout << "Stopped.\n";
-#endif
-
-    // ================================================================
-    // Пример 2: Парсинг XML (раскомментируйте для запуска)
-    // ================================================================
-#if 0
-    constexpr const char * spectra_filepath = "../../doc/spectra-templates.xml";
-    constexpr const char * asts_filepath = "../../doc/FIX50SP2-2025-Oct.xml";
-
-    std::string filepath = spectra_filepath;
-    if (argc > 1) {
-        filepath = argv[1];
+    auto vm = *std::move(opt_result.first);
+    if (vm.count("help")) {
+        std::cout << std::format("Usage: app [options]\n{}", program_options::to_string());
+        return 0;
     }
-    test_parse_xml_files(filepath);
-#endif
+
+    config::ConfigParser parser(vm);
+    auto [cfg, err] = parser.try_parse();
+    if (!err.empty()) {
+        std::cerr << "Config error: " << err << "\n";
+        return 1;
+    }
+
+    if (!cfg) {
+        std::cout << "Not using any configuration file\n";
+        config::cfg = std::make_unique<config::AppConfig>();
+    } else {
+        config::cfg = std::make_unique<config::AppConfig>(*std::move(cfg));
+    }
+
+    auto template_filepath = config::cfg->template_dir_path / config::cfg->template_file_name;
+
+    std::cout << template_filepath << '\n' << config::cfg->exchange << '\n';
+
+    std::unique_ptr<fast::FastMessageHandler> message_handler;
+    try {
+        message_handler = std::make_unique<fast::FastMessageHandler>(template_filepath);
+        message_handler->on_message([] (const fast::FastMessage& msg) {
+            auto str = std::format("{}: '{}' -> '{}' -> '{}'\n", msg.local_namespace_name,
+                                   msg.namespace_name, msg.template_id, msg.template_name);
+            if (!msg.fields.empty())
+                std::ranges::for_each(msg.fields, [&str] (auto const& f) {
+                    str.append(1, '\t')
+                      .append(f.name)
+                      .append(1, '=')
+                      .append(std::to_string(f.tag_id))
+                      .append(1, '\n');
+                });
+            std::cout << std::endl;
+            std::cout << str;
+        });
+        message_handler->on_error([] (std::string const& ns, std::string const& err) {
+            std::cerr << "[ERR] " << ns << ": " << err << '\n';
+        });
+    }
+    catch (std::exception const& err) {
+        std::cerr << "FastMessageHandler create error: " << err.what() << '\n';
+        return 1;
+    }
+
+    asio::UdpMulticastManager network_manager{message_handler->get_data_handler()};
+
+    network_manager.add_receiver(config::GROUP_A, "239.195.5.65", 36065, 2);
+    network_manager.add_receiver(config::GROUP_A, "239.195.133.65", 37065);
+
+    network_manager.add_receiver(config::GROUP_B, "239.195.5.73", 36073, 2);
+    network_manager.add_receiver(config::GROUP_B, "239.195.133.73", 37073);
+
+    network_manager.start();
+
+    sigset_t set;
+    int sig;
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    sigaddset(&set, SIGTERM);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
+    sigwait(&set, &sig);
 
     return 0;
 }

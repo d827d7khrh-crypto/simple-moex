@@ -4,56 +4,64 @@
 #include <algorithm>
 #include <iostream>
 
-namespace fix::fast {
+namespace fast
+{
 
 // ============================================================================
-// Конструктор / Деструктор
+// Constructor/Destructor
 // ============================================================================
 
-FastTemplatesParser::FastTemplatesParser() = default;
-FastTemplatesParser::~FastTemplatesParser() = default;
+FastTemplatesParser::FastTemplatesParser ()  = default;
+FastTemplatesParser::~FastTemplatesParser () = default;
 
 // ============================================================================
-// Утилиты
+// Utilities
 // ============================================================================
 
-std::string FastTemplatesParser::get_attribute(xmlpp::Element* elem, const std::string& attr_name) {
+std::string FastTemplatesParser::get_attribute (xmlpp::Element* elem,
+                                                const std::string& attr_name)
+{
     if (!elem) return {};
     return elem->get_attribute_value(attr_name);
 }
 
-FieldType FastTemplatesParser::parse_field_type(const std::string& type_name) {
-    // libxml++ возвращает имя тега элемента, который определяет тип:
+FieldType FastTemplatesParser::parse_field_type (const std::string& type_name)
+{
+    // libxml++ returns tag name of element witch describes a type:
     // <string>, <uInt32>, <uInt64>, <int32>, <int64>, <decimal>
-    if (type_name == "string")   return FieldType::String;
-    if (type_name == "uInt32")   return FieldType::UInt32;
-    if (type_name == "uInt64")   return FieldType::UInt64;
-    if (type_name == "int32")    return FieldType::Int32;
-    if (type_name == "int64")    return FieldType::Int64;
-    if (type_name == "decimal")  return FieldType::Decimal;
+    if (type_name == "string") return FieldType::String;
+    if (type_name == "uInt32") return FieldType::UInt32;
+    if (type_name == "uInt64") return FieldType::UInt64;
+    if (type_name == "int32") return FieldType::Int32;
+    if (type_name == "int64") return FieldType::Int64;
+    if (type_name == "decimal") return FieldType::Decimal;
     return FieldType::String; // fallback
 }
 
-Presence FastTemplatesParser::parse_presence(const std::string& presence) {
+Presence FastTemplatesParser::parse_presence (const std::string& presence)
+{
     if (presence == "optional") return Presence::Optional;
     return Presence::Required;
 }
 
-Charset FastTemplatesParser::parse_charset(const std::string& charset) {
+Charset FastTemplatesParser::parse_charset (const std::string& charset)
+{
     if (charset == "unicode") return Charset::Unicode;
     return Charset::Default;
 }
 
-void FastTemplatesParser::set_error(const std::string& msg) {
+void FastTemplatesParser::set_error (const std::string& msg)
+{
     error_ = msg;
     std::cerr << "[FAST Parser ERROR] " << msg << "\n";
 }
 
 // ============================================================================
-// Парсинг из файла
+// File parsing
 // ============================================================================
 
-bool FastTemplatesParser::parse_file(const std::string& filepath) {
+bool FastTemplatesParser::parse_file (const std::string& filepath)
+{
     error_.clear();
 
     try {
@@ -76,10 +84,11 @@ bool FastTemplatesParser::parse_file(const std::string& filepath) {
 }
 
 // ============================================================================
-// Парсинг из строки
+// String parsing
 // ============================================================================
 
-bool FastTemplatesParser::parse_string(const std::string& xml_content) {
+bool FastTemplatesParser::parse_string (const std::string& xml_content)
+{
     error_.clear();
     dictionary_ = TemplatesDictionary{};
 
@@ -91,13 +100,14 @@ bool FastTemplatesParser::parse_string(const std::string& xml_content) {
             return false;
         }
 
-        xmlpp::Element* root = dynamic_cast<xmlpp::Element*>(parser_.get_document()->get_root_node());
+        xmlpp::Element* root =
+          dynamic_cast<xmlpp::Element*>(parser_.get_document()->get_root_node());
         if (!root) {
             set_error("XML document has no root element");
             return false;
         }
 
-        // Получаем имя namespace (например, "templates")
+        // get namespace name (example, "templates")
         dictionary_.namespace_name = root->get_name();
 
         return parse_templates_element(root);
@@ -113,34 +123,30 @@ bool FastTemplatesParser::parse_string(const std::string& xml_content) {
 }
 
 // ============================================================================
-// Получение результатов
+// Get results from parsed document
 // ============================================================================
 
-const TemplatesDictionary& FastTemplatesParser::get_templates() const {
-    return dictionary_;
-}
+const TemplatesDictionary& FastTemplatesParser::get_templates () const
+{ return dictionary_; }
 
-TemplatesDictionary& FastTemplatesParser::get_templates() {
-    return dictionary_;
-}
+TemplatesDictionary& FastTemplatesParser::get_templates ()
+{ return dictionary_; }
 
-const std::string& FastTemplatesParser::get_error() const {
-    return error_;
-}
+const std::string& FastTemplatesParser::get_error () const
+{ return error_; }
 
 // ============================================================================
-// Разбор элемента <templates>
+// Parsing the element <templates>
 // ============================================================================
 
-bool FastTemplatesParser::parse_templates_element(xmlpp::Element* root) {
-    // Итерируем все дочерние элементы <template>
+bool FastTemplatesParser::parse_templates_element (xmlpp::Element* root)
+{
+    // iterate over all childs of <template>
     auto children = root->get_children();
     for (auto* child : children) {
         if (auto* template_elem = dynamic_cast<xmlpp::Element*>(child)) {
             if (template_elem->get_name() == "template") {
-                if (!parse_template_element(template_elem)) {
-                    return false;
-                }
+                if (!parse_template_element(template_elem)) { return false; }
             }
         }
     }
@@ -148,14 +154,15 @@ bool FastTemplatesParser::parse_templates_element(xmlpp::Element* root) {
 }
 
 // ============================================================================
-// Разбор элемента <template>
+// Parsing the element <template>
 // ============================================================================
 
-bool FastTemplatesParser::parse_template_element(xmlpp::Element* template_elem) {
+bool FastTemplatesParser::parse_template_element (xmlpp::Element* template_elem)
+{
     TemplateDefinition tpl;
 
-    // Основные атрибуты шаблона
-    tpl.name = get_attribute(template_elem, "name");
+    // the template main attributes
+    tpl.name     = get_attribute(template_elem, "name");
     auto id_attr = get_attribute(template_elem, "id");
     if (!id_attr.empty()) {
         try {
@@ -172,7 +179,7 @@ bool FastTemplatesParser::parse_template_element(xmlpp::Element* template_elem) 
         return false;
     }
 
-    // Итерируем дочерние элементы
+    // iterate over nested elements
     auto children = template_elem->get_children();
     for (auto* child : children) {
         if (auto* child_elem = dynamic_cast<xmlpp::Element*>(child)) {
@@ -181,17 +188,12 @@ bool FastTemplatesParser::parse_template_element(xmlpp::Element* template_elem) 
             if (tag_name == "sequence") {
                 // Это вложенная последовательность
                 SequenceDefinition seq_def;
-                if (!parse_sequence_element(child_elem, seq_def)) {
-                    return false;
-                }
+                if (!parse_sequence_element(child_elem, seq_def)) { return false; }
                 tpl.sequences.push_back(std::move(seq_def));
-            }
-            else {
+            } else {
                 // Это поле (string, uInt32, int64, decimal, и т.д.)
                 FieldDefinition field_def;
-                if (!parse_field_element(child_elem, field_def)) {
-                    return false;
-                }
+                if (!parse_field_element(child_elem, field_def)) { return false; }
                 tpl.fields.push_back(std::move(field_def));
             }
         }
@@ -202,16 +204,18 @@ bool FastTemplatesParser::parse_template_element(xmlpp::Element* template_elem) 
 }
 
 // ============================================================================
-// Разбор элемента поля (string, uInt32, int64, decimal, и т.д.)
+// Parsing the field element (string, uInt32, int64, decimal, ...)
 // ============================================================================
 
-bool FastTemplatesParser::parse_field_element(xmlpp::Element* field_elem, FieldDefinition& field_def) {
-    // Имя тега элемента определяет тип (string, uInt32, int64, decimal, и т.д.)
+bool FastTemplatesParser::parse_field_element (xmlpp::Element* field_elem,
+                                               FieldDefinition& field_def)
+{
+    // element's tag name defines a type (string, uInt32, int64, decimal, ...)
     field_def.type = parse_field_type(field_elem->get_name());
 
-    // Извлекаем атрибуты
+    // extact attributes
     field_def.name = get_attribute(field_elem, "name");
-    auto id_attr = get_attribute(field_elem, "id");
+    auto id_attr   = get_attribute(field_elem, "id");
 
     if (!id_attr.empty()) {
         try {
@@ -224,16 +228,12 @@ bool FastTemplatesParser::parse_field_element(xmlpp::Element* field_elem, FieldD
     }
 
     auto presence_attr = get_attribute(field_elem, "presence");
-    if (!presence_attr.empty()) {
-        field_def.presence = parse_presence(presence_attr);
-    }
+    if (!presence_attr.empty()) { field_def.presence = parse_presence(presence_attr); }
 
     auto charset_attr = get_attribute(field_elem, "charset");
-    if (!charset_attr.empty()) {
-        field_def.charset = parse_charset(charset_attr);
-    }
+    if (!charset_attr.empty()) { field_def.charset = parse_charset(charset_attr); }
 
-    // Проверяем наличие константного значения (<constant value="..."/>)
+    // check for an constant value (<constant value="..."/>)
     for (auto* child : field_elem->get_children()) {
         auto* constant_elem = dynamic_cast<xmlpp::Element*>(child);
         if (constant_elem && constant_elem->get_name() == "constant") {
@@ -251,42 +251,38 @@ bool FastTemplatesParser::parse_field_element(xmlpp::Element* field_elem, FieldD
 }
 
 // ============================================================================
-// Разбор элемента последовательности <sequence>
+// Parsing the sequence element <sequence>
 // ============================================================================
 
-bool FastTemplatesParser::parse_sequence_element(xmlpp::Element* seq_elem, SequenceDefinition& seq_def) {
+bool FastTemplatesParser::parse_sequence_element (xmlpp::Element* seq_elem,
+                                                  SequenceDefinition& seq_def)
+{
     seq_def.name = get_attribute(seq_elem, "name");
 
     auto presence_attr = get_attribute(seq_elem, "presence");
-    if (!presence_attr.empty()) {
-        seq_def.presence = parse_presence(presence_attr);
-    }
+    if (!presence_attr.empty()) { seq_def.presence = parse_presence(presence_attr); }
 
-    // Итерируем дочерние элементы последовательности
+    // iterate over nested elements of sequence
     auto children = seq_elem->get_children();
     for (auto* child : children) {
         if (auto* child_elem = dynamic_cast<xmlpp::Element*>(child)) {
             std::string tag_name = child_elem->get_name();
 
-            // Первый элемент с length (например, <length name="NoMDEntries" id="268"/>)
-            // определяет тег счётчика элементов последовательности
+            // the first element with length (example, <length name="NoMDEntries" id="268"/>)
+            // defines the tag of counter sequence elements
             if (tag_name == "length") {
                 seq_def.length_tag = std::stoi(get_attribute(child_elem, "id"));
-            }
-            else if (tag_name == "sequence") {
-                // Это вложенная последовательность рекурсивно
+            } else if (tag_name == "sequence") {
+                // nested sequence recusive
                 NestedSequenceDefinition nested_seq_def;
                 if (!parse_nested_sequence_element(child_elem, nested_seq_def)) {
                     return false;
                 }
                 seq_def.nested_sequences.push_back(std::move(nested_seq_def));
-            }
-            else {
-                // Остальные — поля последовательности
+            } else {
+                // the reset is sequence fields
                 FieldDefinition field_def;
-                if (!parse_field_element(child_elem, field_def)) {
-                    return false;
-                }
+                if (!parse_field_element(child_elem, field_def)) { return false; }
                 seq_def.fields.push_back(std::move(field_def));
             }
         }
@@ -306,41 +302,37 @@ bool FastTemplatesParser::parse_sequence_element(xmlpp::Element* seq_elem, Seque
 }
 
 // ============================================================================
-// Разбор элемента вложенной последовательности <sequence>
+// Parsing the element of the nested sequence <sequence>
 // ============================================================================
 
-bool FastTemplatesParser::parse_nested_sequence_element(xmlpp::Element* seq_elem, NestedSequenceDefinition& seq_def) {
+bool FastTemplatesParser::parse_nested_sequence_element (xmlpp::Element* seq_elem,
+                                                         NestedSequenceDefinition& seq_def)
+{
     seq_def.name = get_attribute(seq_elem, "name");
 
     auto presence_attr = get_attribute(seq_elem, "presence");
-    if (!presence_attr.empty()) {
-        seq_def.presence = parse_presence(presence_attr);
-    }
+    if (!presence_attr.empty()) { seq_def.presence = parse_presence(presence_attr); }
 
-    // Итерируем дочерние элементы последовательности
+    // iterate over nested sequence elements
     auto children = seq_elem->get_children();
     for (auto* child : children) {
         if (auto* child_elem = dynamic_cast<xmlpp::Element*>(child)) {
             std::string tag_name = child_elem->get_name();
 
-            // Первый элемент с length определяет тег счётчика элементов последовательности
+            // the first element with length defines counter's tag
             if (tag_name == "length") {
                 seq_def.length_tag = std::stoi(get_attribute(child_elem, "id"));
-            }
-            else if (tag_name == "sequence") {
-                // Это вложенная последовательность рекурсивно
+            } else if (tag_name == "sequence") {
+                // nested sequence recursive
                 NestedSequenceDefinition nested_seq_def;
                 if (!parse_nested_sequence_element(child_elem, nested_seq_def)) {
                     return false;
                 }
                 seq_def.nested_sequences.push_back(std::move(nested_seq_def));
-            }
-            else {
-                // Остальные — поля последовательности
+            } else {
+                // the rest are sequence fields
                 FieldDefinition field_def;
-                if (!parse_field_element(child_elem, field_def)) {
-                    return false;
-                }
+                if (!parse_field_element(child_elem, field_def)) { return false; }
                 seq_def.fields.push_back(std::move(field_def));
             }
         }
@@ -359,4 +351,4 @@ bool FastTemplatesParser::parse_nested_sequence_element(xmlpp::Element* seq_elem
     return true;
 }
 
-} // namespace fix::fast
+} // namespace fast

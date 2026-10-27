@@ -1,0 +1,24 @@
+# FIX FAST Market Data Receiver Configuration
+
+[general]
+template_file_name = "spectra-templates.xml"
+#template_file_name = "FIX50SP2-2025-Oct.xml"
+template_dir_path = "doc"
+exchange = "MOEX"
+
+# ============================================================================
+# Feed groups — each group corresponds to a multicast subscription set
+# ============================================================================
+
+[[groups]]
+name = "FEED_1"
+
+[[groups.subgroups]]
+name = "A"
+multicast_group = "239.195.5.65"
+multicast_port = 36065
+
+[[groups.subgroups]]
+name = "B"
+multicast_group = "239.195.133.65"
+multicast_port = 37065
