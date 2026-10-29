@@ -9,6 +9,7 @@
 #include <atomic>
 #include <cstdint>
 #include <tuple>
+#include <chrono>
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
@@ -51,7 +52,10 @@ class UdpMulticastReceiver : boost::noncopyable,
 
         SocketInfo (SocketInfo&& other)
           : socket{std::move(other.socket)},
+            sender_endpoint{std::move(other.sender_endpoint)},
+            time{std::move(other.time)},
             multicast_group{std::move(other.multicast_group)},
+            address{std::move(other.address)},
             port{other.port},
             buffer{std::move(other.buffer)}
         {
@@ -62,9 +66,10 @@ class UdpMulticastReceiver : boost::noncopyable,
             if (&other != this) {
                 socket          = std::move(other.socket);
                 sender_endpoint = std::move(other.sender_endpoint);
+                time            = std::move(other.time);
                 multicast_group = std::move(other.multicast_group);
-                port            = other.port;
                 address         = std::move(other.address);
+                port            = other.port;
                 buffer          = std::move(other.buffer);
             }
             return *this;
@@ -81,9 +86,10 @@ class UdpMulticastReceiver : boost::noncopyable,
 
         ip::udp::socket socket;
         ip::udp::endpoint sender_endpoint;
+        std::chrono::sys_time<std::chrono::microseconds> time;
         std::string multicast_group;
-        uint16_t port;
         std::string address;
+        uint16_t port;
         std::array<char, MAX_PACKET_SIZE> buffer;
     };
 

@@ -14,6 +14,7 @@
 
 #include "udp_multicast_receiver.h"
 #include "fast_message_parser.h"
+#include "thread_pool.h"
 
 namespace fast
 {
@@ -41,9 +42,6 @@ class FastMessageHandler
 {
     using DataHandler = asio::UdpMulticastReceiver::DataHandler;
     using SocketInfo  = asio::UdpMulticastReceiver::SocketInfo;
-
-    constexpr static inline const size_t MAX_TASKS_FUTURES_SIZE  = config::MAX_TASKS_SIZE;
-    constexpr static inline const size_t MESSAGES_QUEUE_CAPACITY = MAX_TASKS_FUTURES_SIZE * 2;
 
   public:
     explicit FastMessageHandler (std::filesystem::path const& template_filepath);
@@ -105,6 +103,9 @@ class FastMessageHandler
     // The only stop source for all threads / waits
     std::stop_source threads_stop_source_;
 
+    // Workers threads
+    ThreadPool workers_;
+
     // Decoder instance
     FastMessageDecoder decoder_;
 
@@ -117,9 +118,9 @@ class FastMessageHandler
     using TaskFutureList = std::list<std::future<FastMessagePtr>>;
     TaskFutureList tasks_futures_;
 
-    using MessagesQueue =
-      boost::lockfree::spsc_queue<FastMessagePtr,
-                                  boost::lockfree::capacity<MESSAGES_QUEUE_CAPACITY>>;
+    using MESSAGES_QUEUE_CAPACITY = boost::lockfree::capacity<256>;
+    using MessagesQueue = boost::lockfree::spsc_queue<FastMessagePtr, MESSAGES_QUEUE_CAPACITY>;
+
     MessagesQueue messages_queue_;
 
     std::jthread tasks_multiplex_thread_;

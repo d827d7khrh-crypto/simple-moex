@@ -36,9 +36,13 @@ const FastField* FastMessage::find_field_by_id (int tag_id) const
 
 FastMessage FastMessageDecoder::decode (const char* data, size_t size, bool dictionary_reset)
 {
-    auto [msg, err] = try_decode(data, size, dictionary_reset);
-    if (!err.empty()) { throw std::runtime_error(err); }
-    return msg;
+    std::string err;
+    auto msg = try_decode(data, size, dictionary_reset, err);
+    if (!msg) {
+        if (!err.empty()) throw std::runtime_error(err);
+        return {};
+    }
+    return *msg;
 }
 
 // MOEX: All dictionary entries are reset to the initial values specified after each UDP
@@ -46,24 +50,26 @@ FastMessage FastMessageDecoder::decode (const char* data, size_t size, bool dict
 //       Currently, MOEX sends one message per UDP packet.
 // - dictionary_reset: see above
 
-FastMessageDecoder::TryDecodeResult
-FastMessageDecoder::try_decode (const char* data, size_t size, bool dictionary_reset)
+std::optional<FastMessage> FastMessageDecoder::try_decode (const char* data, size_t size,
+                                                           bool dictionary_reset,
+                                                           std::string& err)
 {
     Decoder* P_decoder = nullptr;
     try {
         if (!has_front_decoder()) emplace_front_decoder();
 
         P_decoder = pop_front_decoder();
-        if (!P_decoder) return {{}, "error"};
+        if (!P_decoder) { return std::nullopt; }
 
         const char* first = data;
         const char* last  = data + size;
 
-        mfast::message_cref msg_ref = P_decoder->decoder.decode(first, last, dictionary_reset);
+        mfast::message_cref msg_ref = P_decoder->decode(first, last, dictionary_reset);
 
         if (msg_ref.absent()) {
             emplace_front_decoder(P_decoder);
-            return {{}, "Decoded message is absent"};
+            err = "Decoded message is absent";
+            return std::nullopt;
         }
 
         FastMessage result;
@@ -112,11 +118,12 @@ FastMessageDecoder::try_decode (const char* data, size_t size, bool dictionary_r
         }
 
         emplace_front_decoder(P_decoder);
-        return {result, {}};
+        return result;
     }
     catch (const std::exception& e) {
         if (P_decoder) emplace_front_decoder(P_decoder);
-        return {{}, std::format("Decode error: {}", e.what())};
+        err = std::format("Decode error: {}", e.what());
+        return std::nullopt;
     }
 }
 

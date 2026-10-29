@@ -26,8 +26,8 @@ std::string to_string ();
 namespace config
 {
 
-constexpr static inline const char MOEX_EXCHANGE[]        = "MOEX";
-constexpr static inline const unsigned int MAX_TASKS_SIZE = 128;
+constexpr static inline const size_t WORKERS_THREADS = 16;
+constexpr static inline const char MOEX_EXCHANGE[]   = "MOEX";
 
 enum : uint16_t { GROUP_A, GROUP_B };
 

@@ -33,13 +33,17 @@ add_library(project_headers INTERFACE)
 
 target_include_directories(project_headers INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/receiver>"
-    "$<INSTALL_INTERFACE:src/receiver>"
+#    "$<INSTALL_INTERFACE:src/receiver>"
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/thread_pool>"
+#    "$<INSTALL_INTERFACE:src/thread_pool>"
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/receiver>"
+#    "$<INSTALL_INTERFACE:src/receiver>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/fix_fast_parser>"
-    "$<INSTALL_INTERFACE:src/fix_fast_parser>"
+#    "$<INSTALL_INTERFACE:src/fix_fast_parser>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/config>"
-    "$<INSTALL_INTERFACE:src/config>"
+#    "$<INSTALL_INTERFACE:src/config>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/misc>"
-    "$<INSTALL_INTERFACE:src/misc>"
+#    "$<INSTALL_INTERFACE:src/misc>"
 )
 
 add_subdirectory(src)

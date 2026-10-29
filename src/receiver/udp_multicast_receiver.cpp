@@ -80,6 +80,7 @@ void UdpMulticastReceiver::handle_receive (SocketInfo& s, std::size_t bytes_tran
                                            error_code const& error)
 {
     if (!error) {
+        s.time = std::chrono::system_clock::now();
         handler_(s, feed_group_, bytes_transferred);
         // Post the next receive operation
         do_receive(s);
@@ -193,7 +194,7 @@ void UdpMulticastManager::start (std::optional<uint16_t> feed_group)
         };
         auto [_, num_threads] = std::ranges::for_each(receivers_, Size{});
         num_threads.sz =
-          std::min(size_t(std::thread::hardware_concurrency()), num_threads.sz * 3ul / 2ul);
+          std::min(size_t(std::thread::hardware_concurrency()), num_threads.sz + 1);
         threads_.reserve(num_threads.sz);
 
         io_running_.store(True, std::memory_order_relaxed);

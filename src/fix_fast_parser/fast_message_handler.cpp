@@ -11,7 +11,8 @@ namespace fast
 // FastMessageHandler
 // ============================================================================
 FastMessageHandler::FastMessageHandler (std::filesystem::path const& template_filepath)
-  : decoder_{template_filepath, threads_stop_source_}
+  : workers_{config::WORKERS_THREADS},
+    decoder_{template_filepath, threads_stop_source_}
 {
     // the use of stop_source is mandatory due jthread's static assertions,
     // if the threads_stop_source_ issues a stop request all the below threads
@@ -79,47 +80,65 @@ FastMessageHandler::DataHandler FastMessageHandler::get_data_handler ()
 void FastMessageHandler::on_udp_packet (SocketInfo& si, size_t length)
 {
     std::cout << std::format("[on_udp_packet] {:s}, length={:d}\n", si.to_string(), length);
-    // MOEX: dictionary_reset = true
-    bool dictionary_reset = true;
-
-    std::packaged_task<FastMessagePtr(std::string, std::unique_ptr<char[]>, size_t)> task(
-      [this, dictionary_reset] (std::string local_namespace, std::unique_ptr<char[]> data,
-                                size_t length) {
-          auto [msg, err] = decoder_.try_decode(data.get(), length, dictionary_reset);
-          if (!err.empty()) {
-              // Log decode error
-              auto handler =
-                std::atomic_load_explicit(&error_handler_, std::memory_order_relaxed);
-              if (handler && *handler) { (*handler)(local_namespace, err); }
-              return FastMessagePtr{};
-          }
-          msg.local_namespace_name = std::move(local_namespace);
-          return std::make_shared<FastMessage>(std::move(msg));
-      });
 
     const char* P_data = si.buffer.data();
-    // MOEX: Packet seq_no
-    if (length >= sizeof(uint32_t)) {
-        uint32_t seq_no = *((uint32_t*)P_data);
-        P_data += sizeof(uint32_t);
-        length -= sizeof(uint32_t);
+    uint32_t seq_no    = 0;
+    if (config::cfg->exchange == config::MOEX_EXCHANGE) {
+        // MOEX: Packet seq_no
+        if (length >= sizeof(uint32_t)) {
+            seq_no = *((uint32_t*)P_data);
+            P_data += sizeof(uint32_t);
+            length -= sizeof(uint32_t);
+        }
     }
 
-    if (length) {
-        // Submit the packet data buffer to a decoder task
-        std::unique_ptr<char[]> data = std::make_unique_for_overwrite<char[]>(length);
-        std::memcpy(data.get(), P_data, length);
+    if (length == 0) return;
 
+    // Submit the packet data buffer to a decoder task.
+    std::shared_ptr<char[]> data = std::make_shared_for_overwrite<char[]>(length);
+    std::memcpy(data.get(), P_data, length);
+    // Submit an async task to thread pool.
+    auto future = workers_.enqueue(
+      [this] (std::string local_namespace, std::chrono::system_clock::rep time_us,
+              std::shared_ptr<char[]> data, size_t length) {
+          std::string err;
+          if (auto msg = decoder_.try_decode(data.get(), length,
+                                             config::cfg->template_dictionary_reset, err)) {
+              msg->local_namespace_name = std::move(local_namespace);
+              msg->time_us              = time_us;
+              return std::make_shared<FastMessage>(*std::move(msg));
+          } else {
+              // Log decode error
+              if (!err.empty()) {
+                  auto handler =
+                    std::atomic_load_explicit(&error_handler_, std::memory_order_relaxed);
+                  if (handler && *handler) { (*handler)(local_namespace, err); }
+              }
+              return FastMessagePtr{};
+          }
+      },
+      local_namespace(si.multicast_group, si.port), si.time.time_since_epoch().count(), data,
+      length);
+
+    if (future.valid()) {
         do {
+            // Store a task return state in the tasks_futures_ if it possible,
+            // wait a little if exhausted or return on stop.
             std::lock_guard lk{tasks_futures_mutext_};
-            if (tasks_futures_.size() < MAX_TASKS_FUTURES_SIZE) {
-                tasks_futures_.push_back(task.get_future());
+            if (tasks_futures_.size() < config::WORKERS_THREADS * 2) {
+                tasks_futures_.push_back(std::move(future));
                 break;
             }
+
+            if (threads_stop_source_.stop_requested()) {
+                tasks_futures_cv_.notify_all();
+                return;
+            }
+
             using namespace std::chrono_literals;
             std::this_thread::sleep_for(1us);
         } while (true);
-        task(local_namespace(si.multicast_group, si.port), std::move(data), length);
+
         tasks_futures_cv_.notify_all();
     }
 }
@@ -151,15 +170,12 @@ void FastMessageHandler::tasks_multiplexer (std::stop_token stoken)
         lk.unlock();
 
         if (fut) {
-            // ensure we put in messages queue only valid (not null) pointers
+            // ensure we put messages in queue are only valid (not null) pointers
             if (FastMessagePtr message{std::move(fut->get())}) {
                 while (!messages_queue_.push(message)) {
                     if (stoken.stop_requested()) break;
                     std::this_thread::sleep_for(10us);
                 }
-                std::cout << std::format(
-                  "[tasks_multiplexer] pushed future message into messages_queue_\n");
-
                 messages_queue_cv_.notify_all();
             }
         }
@@ -205,8 +221,6 @@ void FastMessageHandler::messages_consumer (std::stop_token stoken)
         if (!consumed) {
             std::mutex wait_mutex;
             std::unique_lock lk{wait_mutex};
-            std::cout << std::format(
-              "[messages_consumer] start waiting for messages_queue_\n");
             messages_queue_cv_.wait(lk, stoken,
                                     [this] { return messages_queue_.read_available() > 0; });
         }

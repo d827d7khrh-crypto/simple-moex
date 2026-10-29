@@ -16,9 +16,11 @@
 #include <cstdint>
 #include <utility>
 #include <mutex>
+#include <optional>
 #include <stop_token>
 #include <condition_variable>
 #include <forward_list>
+#include <chrono>
 #include <stdexcept>
 #include "fix_types.h"
 #include "config.h"
@@ -40,6 +42,59 @@ struct FastField
     std::string name;     // Field name (e.g., "Symbol")
     int tag_id = -1;      // FIX tag ID
     FastFieldValue value; // Field value
+
+    constexpr bool has_value () const
+    { return value.which() != 0; }
+
+    constexpr std::optional<std::string> to_string () const
+    {
+        if (auto* str_ptr = boost::get<std::string>(&value))
+            return *str_ptr;
+        else
+            return std::nullopt;
+    }
+    constexpr std::optional<int32_t> to_int32 () const
+    {
+        if (auto* int_ptr = boost::get<int32_t>(&value))
+            return *int_ptr;
+        else
+            return std::nullopt;
+    }
+    constexpr std::optional<uint32_t> to_uint32 () const
+    {
+        if (auto* int_ptr = boost::get<uint32_t>(&value))
+            return *int_ptr;
+        else
+            return std::nullopt;
+    }
+    constexpr std::optional<int64_t> to_int64 () const
+    {
+        if (auto* int_ptr = boost::get<int64_t>(&value))
+            return *int_ptr;
+        else
+            return std::nullopt;
+    }
+    constexpr std::optional<uint64_t> to_uint64 () const
+    {
+        if (auto* int_ptr = boost::get<uint64_t>(&value))
+            return *int_ptr;
+        else
+            return std::nullopt;
+    }
+    constexpr std::optional<double> to_double () const
+    {
+        if (auto* dbl_ptr = boost::get<double>(&value))
+            return *dbl_ptr;
+        else
+            return std::nullopt;
+    }
+    template <typename T> constexpr std::optional<T> to () const
+    {
+        if (auto* ptr = boost::get<T>(&value))
+            return *ptr;
+        else
+            return std::nullopt;
+    }
 };
 
 /// Parsed message sequence
@@ -57,12 +112,13 @@ struct FastSequence
 
 struct FastMessage
 {
-    int template_id = -1;                // FAST template ID
-    std::string template_name;           // Template name
-    std::string namespace_name;          // Namespace name
-    std::string local_namespace_name;    // Local Namespace (maddr:port)
-    std::vector<FastField> fields;       // Top-level fields
-    std::vector<FastSequence> sequences; // Sequences
+    int template_id = -1;                   // FAST template ID
+    std::chrono::system_clock::rep time_us; // UDP packet receive time
+    std::string template_name;              // Template name
+    std::string namespace_name;             // Namespace name
+    std::string local_namespace_name;       // Local Namespace (maddr:port)
+    std::vector<FastField> fields;          // Top-level fields
+    std::vector<FastSequence> sequences;    // Sequences
 
     /// Find a field by name (top-level only)
     const FastField* find_field_by_name (const std::string& name) const;
@@ -79,21 +135,7 @@ using FastMessagePtr = std::shared_ptr<FastMessage>;
 
 class FastMessageDecoder
 {
-    constexpr static inline const unsigned int MAX_DECODERS_COUNT = config::MAX_TASKS_SIZE;
-    struct Decoder
-    {
-        // Store an error message
-        template <typename S>
-            requires std::is_convertible<S, std::string>::value
-        void set_error (S&& msg)
-        { err = std::forward<S>(msg); }
-        /// Get error message from the last failed decode attempt
-        constexpr std::string const& get_error () const
-        { return err; }
-
-        mfast::fast_decoder decoder;
-        std::string err;
-    };
+    using Decoder = mfast::fast_decoder;
 
   public:
     // ------------------------------------------------------------------
@@ -134,8 +176,8 @@ class FastMessageDecoder
 
     /// Attempt to decode; returns {message, error}.
     /// If error is empty, decoding succeeded.
-    using TryDecodeResult = std::pair<FastMessage, std::string>;
-    TryDecodeResult try_decode (const char* data, size_t size, bool dictionary_reset);
+    std::optional<FastMessage> try_decode (const char* data, size_t size,
+                                           bool dictionary_reset, std::string& err);
 
   private:
     // ------------------------------------------------------------------
@@ -161,16 +203,17 @@ class FastMessageDecoder
     void emplace_front_decoder (Decoder* P_decoder = nullptr)
     {
         std::stop_token stoken = stop_source_.get_token();
+
         do {
             std::unique_lock lk{decoders_mutex_};
             if (decoders_full_cv_.wait(lk, stoken, [this] {
                     return std::distance(decoders_.begin(), decoders_.end()) <
-                           MAX_DECODERS_COUNT;
+                           config::WORKERS_THREADS * 2;
                 })) {
                 if (!P_decoder) {
                     P_decoder = ::new Decoder;
                     // fast_decoder takes templates via include()
-                    P_decoder->decoder.include({templates_.get()});
+                    P_decoder->include({templates_.get()});
                 }
                 decoders_.push_front(P_decoder);
                 return;
@@ -207,9 +250,9 @@ class FastMessageDecoder
     // Extract a sequence from sequence_cref
     FastSequence extract_sequence (const mfast::sequence_cref& seq_ref);
 
-    std::stop_source& stop_source_;
-
     std::unique_ptr<mfast::dynamic_templates_description> templates_;
+
+    std::stop_source& stop_source_;
 
     std::mutex decoders_mutex_;
     std::condition_variable_any decoders_full_cv_;
