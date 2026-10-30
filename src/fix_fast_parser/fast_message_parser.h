@@ -100,9 +100,17 @@ struct FastField
 /// Parsed message sequence
 struct FastSequence
 {
-    std::string name;                 // Sequence name
-    int count_tag_id = -1;            // FIX tag for element count
-    std::vector<FastField> fields;    // Fields in this sequence
+    std::string name;           // Sequence name
+    size_t elem_count = 0;      // Full amount of elements in a sequence group
+    std::string length_name;    // length field name
+    uint64_t length_tag_id = 0; // FIX tag for element count
+    // Each sequence consists of `group_count' field groups
+    struct FieldGroup
+    {
+        using fields_t = std::vector<FastField>;
+        fields_t fields;
+    };
+    std::vector<FieldGroup> groups;   // Fields in this sequence
     std::vector<FastSequence> nested; // Nested sequences
 };
 

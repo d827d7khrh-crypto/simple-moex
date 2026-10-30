@@ -194,7 +194,7 @@ void UdpMulticastManager::start (std::optional<uint16_t> feed_group)
         };
         auto [_, num_threads] = std::ranges::for_each(receivers_, Size{});
         num_threads.sz =
-          std::min(size_t(std::thread::hardware_concurrency()), num_threads.sz + 1);
+          std::min(size_t(std::thread::hardware_concurrency()), num_threads.sz * 3 / 2);
         threads_.reserve(num_threads.sz);
 
         io_running_.store(True, std::memory_order_relaxed);

@@ -79,8 +79,6 @@ FastMessageHandler::DataHandler FastMessageHandler::get_data_handler ()
 
 void FastMessageHandler::on_udp_packet (SocketInfo& si, size_t length)
 {
-    std::cout << std::format("[on_udp_packet] {:s}, length={:d}\n", si.to_string(), length);
-
     const char* P_data = si.buffer.data();
     uint32_t seq_no    = 0;
     if (config::cfg->exchange == config::MOEX_EXCHANGE) {
@@ -164,7 +162,6 @@ void FastMessageHandler::tasks_multiplexer (std::stop_token stoken)
             else
                 tasks_futures_.push_back(std::move(front));
         } else {
-            std::cout << std::format("[tasks_multiplexer] start waiting for tasks_futures_\n");
             tasks_futures_cv_.wait(lk, stoken, [this] { return !tasks_futures_.empty(); });
         }
         lk.unlock();
@@ -203,7 +200,7 @@ void FastMessageHandler::messages_consumer (std::stop_token stoken)
                       std::atomic_load_explicit(&error_handler_, std::memory_order_relaxed);
                     // User callback threw — log and continue
                     if (handler && *handler) {
-                        (*handler)(message->namespace_name,
+                        (*handler)(message->local_namespace_name,
                                    std::string{"Message handler error: "} + e.what());
                     }
                 }
@@ -211,7 +208,7 @@ void FastMessageHandler::messages_consumer (std::stop_token stoken)
                     auto handler =
                       std::atomic_load_explicit(&error_handler_, std::memory_order_relaxed);
                     if (handler && *handler) {
-                        (*handler)(message->namespace_name,
+                        (*handler)(message->local_namespace_name,
                                    "Message handler caught unknown exception");
                     }
                 }

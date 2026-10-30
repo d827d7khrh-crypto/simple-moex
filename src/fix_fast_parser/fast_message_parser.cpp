@@ -76,6 +76,7 @@ std::optional<FastMessage> FastMessageDecoder::try_decode (const char* data, siz
         result.template_id    = static_cast<int>(msg_ref.id());
         result.template_name  = msg_ref.name();
         result.namespace_name = msg_ref.ns();
+        if (result.namespace_name.empty()) result.namespace_name = "default_namespace";
 
         // Convert message_cref to aggregate_cref for field iteration
         mfast::aggregate_cref agg(msg_ref);
@@ -213,21 +214,28 @@ FastSequence FastMessageDecoder::extract_sequence (const mfast::sequence_cref& s
 {
     FastSequence seq;
 
-    if (!seq_ref.present() || seq_ref.size() == 0) { return seq; }
+    auto group_count = seq_ref.size();
+    if (!seq_ref.present() || group_count == 0) { return seq; }
 
-    // Extract sequence name from instruction
+    seq.groups.reserve(group_count);
+    // Extract sequence description from instruction
     const auto* inst = seq_ref.instruction();
-    if (inst) { seq.name = inst->name() ? inst->name() : ""; }
+    if (inst) {
+        auto* length_inst = inst->length_instruction();
+        seq.length_name   = length_inst->name();
+        seq.length_tag_id = length_inst->id();
+        seq.elem_count    = inst->subinstructions().size();
+        seq.name          = inst->name() ? inst->name() : "";
+    }
 
     // Iterate over sequence elements
     for (auto elem_it = seq_ref.begin(); elem_it != seq_ref.end(); ++elem_it) {
-        const mfast::sequence_element_cref& elem = *elem_it;
-
+        const auto num_fields = elem_it->num_fields();
+        auto& group           = seq.groups.emplace_back();
+        group.fields.reserve(num_fields);
         // Each sequence element is an aggregate
-        for (size_t i = 0; i < elem.num_fields(); ++i) {
-            mfast::field_cref field_ref = elem[i];
-            FastField ff                = extract_field(field_ref);
-            seq.fields.push_back(std::move(ff));
+        for (size_t i = 0; i < num_fields; ++i) {
+            group.fields.emplace_back(extract_field((*elem_it)[i]));
         }
     }
 
