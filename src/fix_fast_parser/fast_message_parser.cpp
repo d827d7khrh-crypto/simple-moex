@@ -34,10 +34,10 @@ const FastField* FastMessage::find_field_by_id (int tag_id) const
 // Decoding
 // --------------------------------------------------------------------------
 
-FastMessage FastMessageDecoder::decode (const char* data, size_t size, bool dictionary_reset)
+FastMessage FastMessageDecoder::decode (Buffer const& buffer, bool dictionary_reset)
 {
     std::string err;
-    auto msg = try_decode(data, size, dictionary_reset, err);
+    auto msg = try_decode(buffer, dictionary_reset, err);
     if (!msg) {
         if (!err.empty()) throw std::runtime_error(err);
         return {};
@@ -50,21 +50,20 @@ FastMessage FastMessageDecoder::decode (const char* data, size_t size, bool dict
 //       Currently, MOEX sends one message per UDP packet.
 // - dictionary_reset: see above
 
-std::optional<FastMessage> FastMessageDecoder::try_decode (const char* data, size_t size,
-                                                           bool dictionary_reset,
-                                                           std::string& err)
+std::optional<FastMessage>
+FastMessageDecoder::try_decode (Buffer const& buffer, bool dictionary_reset, std::string& err)
 {
     Decoder* P_decoder = nullptr;
     try {
+        auto first = buffer.begin();
+        if (!first) return std::nullopt;
+
         if (!has_front_decoder()) emplace_front_decoder();
 
         P_decoder = pop_front_decoder();
-        if (!P_decoder) { return std::nullopt; }
+        if (!P_decoder) return std::nullopt;
 
-        const char* first = data;
-        const char* last  = data + size;
-
-        mfast::message_cref msg_ref = P_decoder->decode(first, last, dictionary_reset);
+        mfast::message_cref msg_ref = P_decoder->decode(first, buffer.end(), dictionary_reset);
 
         if (msg_ref.absent()) {
             emplace_front_decoder(P_decoder);
@@ -73,10 +72,9 @@ std::optional<FastMessage> FastMessageDecoder::try_decode (const char* data, siz
         }
 
         FastMessage result;
-        result.template_id    = static_cast<int>(msg_ref.id());
-        result.template_name  = msg_ref.name();
-        result.namespace_name = msg_ref.ns();
-        if (result.namespace_name.empty()) result.namespace_name = "default_namespace";
+        result.template_id   = static_cast<int>(msg_ref.id());
+        result.template_name = msg_ref.name();
+        if (std::string ns = msg_ref.ns(); !ns.empty()) result.namespace_name = std::move(ns);
 
         // Convert message_cref to aggregate_cref for field iteration
         mfast::aggregate_cref agg(msg_ref);

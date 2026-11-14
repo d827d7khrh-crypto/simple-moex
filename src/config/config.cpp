@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <format>
 
 namespace program_options
 {
@@ -65,25 +66,15 @@ namespace config
 
 std::unique_ptr<AppConfig> cfg;
 
-// ============================================================================
-// AppConfig
-// ============================================================================
-
-const FeedGroup* AppConfig::find_group (const std::string& name) const
+std::string AppConfig::print () const
 {
-    for (const auto& g : groups) {
-        if (g.name == name) return &g;
-    }
-    return nullptr;
-}
-
-std::vector<MulticastSubscription> AppConfig::all_subscriptions () const
-{
-    std::vector<MulticastSubscription> result;
-    for (const auto& g : groups) {
-        result.insert(result.end(), g.subgroups.begin(), g.subgroups.end());
-    }
-    return result;
+    std::ostringstream os;
+    std::ranges::for_each(groups, [&os] (auto const& g) { os << g << '\n'; });
+    return std::format("Exchange name: {}\nTemplate path: {}\nUsing message preamble: {}\n"
+                       "FAST dictionary reset: {}\nMulticast Groups:\n{}\n",
+                       exchange,
+                       (std::filesystem::path{template_dir_path} / template_file_name).c_str(),
+                       has_message_preamble, dictionary_reset, os.str());
 }
 
 // ============================================================================
@@ -168,34 +159,54 @@ AppConfig ConfigParser::parse_feed_group_from_root (const toml::value& root)
         cfg.exchange           = toml::find_or(gen, "exchange", std::string{MOEX_EXCHANGE});
         cfg.template_file_name = toml::find<std::string>(gen, "template_file_name");
         cfg.template_dir_path  = toml::find<std::string>(gen, "template_dir_path");
-        cfg.template_dictionary_reset = ::strcasecmp(cfg.exchange.data(), MOEX_EXCHANGE) == 0;
+
+        // MOEX has known preset
+        if (cfg.exchange == MOEX_EXCHANGE) {
+            // default is ASTS
+            cfg.exchange_branch      = MOEX_EXCHANGE_ASTS;
+            cfg.has_message_preamble = true;
+            cfg.dictionary_reset     = true;
+        }
+
+        if (gen.contains("exchange_branch")) {
+            cfg.exchange_branch = toml::find<std::string>(gen, "exchange_branch");
+            if (cfg.exchange == MOEX_EXCHANGE) {
+                if (cfg.exchange_branch != MOEX_EXCHANGE_ASTS &&
+                    cfg.exchange_branch != MOEX_EXCHANGE_SPECTRA)
+                    throw std::invalid_argument(std::format(
+                      "{}: unknown feed branch: {}", MOEX_EXCHANGE, cfg.exchange_branch));
+            }
+        }
+        if (gen.contains("has_message_preamble"))
+            cfg.has_message_preamble = toml::find<bool>(gen, "has_message_preamble");
+        if (gen.contains("dictionary_reset"))
+            cfg.dictionary_reset = toml::find<bool>(gen, "dictionary_reset");
     }
 
     // Groups array — toml11 v4.x: iterate via as_array()
     if (root.contains("groups")) {
         const auto& arr = toml::find<toml::value>(root, "groups");
-        for (const auto& elem : arr.as_array()) {
-            cfg.groups.push_back(parse_feed_group(elem));
-        }
+        for (const auto& elem : arr.as_array())
+            if (auto group = parse_feed_group(elem)) cfg.groups.push_back(*std::move(group));
     }
 
     return cfg;
 }
 
-FeedGroup ConfigParser::parse_feed_group (const toml::value& tbl)
+std::optional<FeedGroup> ConfigParser::parse_feed_group (const toml::value& tbl)
 {
-    FeedGroup group;
-    group.name = toml::find<std::string>(tbl, "name");
-
     // Subgroups array — toml11 v4.x: iterate via as_array()
-    if (tbl.contains("subgroups")) {
-        const auto& arr = toml::find<toml::value>(tbl, "subgroups");
-        for (const auto& elem : arr.as_array()) {
-            group.subgroups.push_back(parse_subscription(elem));
-        }
+    if (tbl.contains("feeds")) {
+        FeedGroup g;
+        g.name = toml::find<std::string>(tbl, "name");
+
+        const auto& arr = toml::find<toml::value>(tbl, "feeds");
+        for (auto const& elem : arr.as_array())
+            g.feeds.push_back(parse_subscription(elem));
+        return g;
     }
 
-    return group;
+    return std::nullopt;
 }
 
 MulticastSubscription ConfigParser::parse_subscription (const toml::value& tbl)

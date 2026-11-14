@@ -23,6 +23,7 @@
 #include <chrono>
 #include <stdexcept>
 #include "fix_types.h"
+#include "buffer.h"
 #include "config.h"
 
 namespace fast
@@ -118,15 +119,17 @@ struct FastSequence
 // Parsed FAST message
 // ============================================================================
 
+constexpr static inline const char DEFAULT_NAMESPACE[] = "default";
+
 struct FastMessage
 {
-    int template_id = -1;                   // FAST template ID
-    std::chrono::system_clock::rep time_us; // UDP packet receive time
-    std::string template_name;              // Template name
-    std::string namespace_name;             // Namespace name
-    std::string local_namespace_name;       // Local Namespace (maddr:port)
-    std::vector<FastField> fields;          // Top-level fields
-    std::vector<FastSequence> sequences;    // Sequences
+    int template_id = -1;                          // FAST template ID
+    std::chrono::system_clock::rep time_us;        // UDP packet receive time
+    std::string template_name;                     // Template name
+    std::string namespace_name{DEFAULT_NAMESPACE}; // Namespace name
+    std::string local_namespace_name;              // Local Namespace (maddr:port)
+    std::vector<FastField> fields;                 // Top-level fields
+    std::vector<FastSequence> sequences;           // Sequences
 
     /// Find a field by name (top-level only)
     const FastField* find_field_by_name (const std::string& name) const;
@@ -143,6 +146,7 @@ using FastMessagePtr = std::shared_ptr<FastMessage>;
 
 class FastMessageDecoder
 {
+    using Buffer  = misc::BoundedBuffer;
     using Decoder = mfast::fast_decoder;
 
   public:
@@ -180,12 +184,12 @@ class FastMessageDecoder
 
     /// Decode binary data into a FastMessage.
     /// Throws std::runtime_error on failure.
-    FastMessage decode (const char* data, size_t size, bool dictionary_reset);
+    FastMessage decode (Buffer const& buffer, bool dictionary_reset);
 
     /// Attempt to decode; returns {message, error}.
     /// If error is empty, decoding succeeded.
-    std::optional<FastMessage> try_decode (const char* data, size_t size,
-                                           bool dictionary_reset, std::string& err);
+    std::optional<FastMessage> try_decode (Buffer const& buffer, bool dictionary_reset,
+                                           std::string& err);
 
   private:
     // ------------------------------------------------------------------

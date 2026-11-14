@@ -127,19 +127,19 @@ bool UdpMulticastManager::add_receiver (uint16_t feed_group, std::string multica
         // Check that the multicast-group/port combination does not exist
         if (receiver->already_listen(multicast_group, port)) {
             std::cerr << std::format(
-              "[Manager] Cannot add receiver on {:s}:{:d}, Group #{:d}: Already exists\n",
+              "[UdpManager] Cannot add receiver on {:s}:{:d}, Group #{:d}: Already exists\n",
               multicast_group, port, feed_group);
             return false;
         }
         // Add a listener to UdpMulticastReceiver
         if (!receiver->listen(multicast_group, port)) {
             std::cerr << std::format(
-              "[Manager] Cannot add receiver on {:s}:{:d}, Group #{:d}\n", multicast_group,
+              "[UdpManager] Cannot add receiver on {:s}:{:d}, Group #{:d}\n", multicast_group,
               port, feed_group);
             return false;
         } else
             std::cout << std::format(
-              "[Manager] Added new receiver on {:s}:{:d}, Group #{:d}\n", multicast_group,
+              "[UdpManager] Added new receiver on {:s}:{:d}, Group #{:d}\n", multicast_group,
               port, feed_group);
     } else {
         // Add a UdpMulticastReceiver configured for this manager and setup a first listener.
@@ -153,11 +153,11 @@ bool UdpMulticastManager::add_receiver (uint16_t feed_group, std::string multica
                ->listen(multicast_group, port)) {
             receivers_.pop_back();
             std::cerr << std::format(
-              "[Manager] Cannot add receiver on {:s}:{:d}, Group #{:d}\n", multicast_group,
+              "[UdpManager] Cannot add receiver on {:s}:{:d}, Group #{:d}\n", multicast_group,
               port, feed_group);
             return false;
         } else {
-            std::cout << std::format("[Manager] Added receiver on {:s}:{:d}, Group #{:d}\n",
+            std::cout << std::format("[UdpManager] Added receiver on {:s}:{:d}, Group #{:d}\n",
                                      multicast_group, port, feed_group);
         }
     }
@@ -171,14 +171,14 @@ void UdpMulticastManager::start (std::optional<uint16_t> feed_group)
     while (!io_running_.compare_exchange_strong(running, Init, std::memory_order_relaxed)) {
         if (running != True) io_running_.wait(running);
         if (True == io_running_.load(std::memory_order_relaxed)) {
-            std::cout << "[Manager] Already running\n";
+            std::cout << "[UdpManager] Already running\n";
             break;
         }
         running = False;
     }
 
     if (receivers_.empty()) {
-        std::cerr << "[Manager] Has no registered UDP Multicat receivers\n";
+        std::cerr << "[UdpManager] Has no registered UDP Multicat receivers\n";
         io_running_.store(False, std::memory_order_relaxed);
         io_running_.notify_one();
         return;
@@ -204,7 +204,8 @@ void UdpMulticastManager::start (std::optional<uint16_t> feed_group)
         for (size_t i = 0; i < num_threads.sz; ++i)
             threads_.emplace_back([this] () { io_service_.run(); });
 
-        std::cout << "[Manager] Started with " << num_threads.sz << " io_service thread(s)\n";
+        std::cout << "[UdpManager] Started with " << num_threads.sz
+                  << " io_service thread(s)\n";
     }
 
     auto start = [] (MulticastReceiverFeedGroup& group) {
@@ -244,7 +245,7 @@ void UdpMulticastManager::stop (std::optional<uint16_t> feed_group)
             threads_.clear();
             receivers_.clear();
 
-            std::cout << "[Manager] Stopped io_service thread(s)\n";
+            std::cout << "[UdpManager] Stopped io_service thread(s)\n";
         }
     }
 }

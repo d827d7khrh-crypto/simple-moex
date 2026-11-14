@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <csignal>
 #include <format>
 #include "udp_multicast_receiver.h"
@@ -23,33 +24,37 @@ int main (int argc, char** argv)
         return 0;
     }
 
-    config::ConfigParser parser(vm);
-    auto [cfg, err] = parser.try_parse();
+    using namespace config;
+
+    ConfigParser parser(vm);
+    auto [cf, err] = parser.try_parse();
     if (!err.empty()) {
         std::cerr << "Config error: " << err << "\n";
         return 1;
     }
 
-    if (!cfg) {
+    if (!cf) {
         std::cout << "Not using any configuration file\n";
-        config::cfg = std::make_unique<config::AppConfig>();
+        cfg = std::make_unique<AppConfig>();
     } else {
-        config::cfg = std::make_unique<config::AppConfig>(*std::move(cfg));
+        cfg = std::make_unique<AppConfig>(*std::move(cf));
     }
 
-    auto template_filepath = config::cfg->template_dir_path / config::cfg->template_file_name;
-
-    std::cerr << template_filepath << '\n' << config::cfg->exchange << '\n';
+    std::cout << cfg->print();
 
     std::unique_ptr<fast::FastMessageHandler> message_handler;
     try {
-        message_handler = std::make_unique<fast::FastMessageHandler>(template_filepath);
+        auto template_filepath = cfg->template_dir_path / cfg->template_file_name;
+        message_handler        = std::make_unique<fast::FastMessageHandler>(template_filepath);
 
         // Messages handler to save all FIX structures to files
         // message_handler->on_message(SaveFileMessageHandler{});
 
         // Message hadler to just output timestamps
         message_handler->on_message(DoNothingMessageHandler{});
+
+        // Simple group based messages handler
+        // message_handler->on_message(GroupsMessageHandler{cfg->groups});
 
         message_handler->on_error([] (std::string const& ns, std::string const& err) {
             std::cerr << "[ERR] " << ns << ": " << err << '\n';
@@ -62,11 +67,14 @@ int main (int argc, char** argv)
 
     asio::UdpMulticastManager network_manager{message_handler->get_data_handler()};
 
-    network_manager.add_receiver(config::GROUP_A, "239.195.5.65", 36065, 2);
-    network_manager.add_receiver(config::GROUP_A, "239.195.133.65", 37065);
-
-    network_manager.add_receiver(config::GROUP_B, "239.195.5.73", 36073, 2);
-    network_manager.add_receiver(config::GROUP_B, "239.195.133.73", 37073);
+    // enable receiving on the groups basis
+    for (size_t group_id = 0; group_id < cfg->groups.size(); ++group_id) {
+        message_handler->add_feed_group(uint16_t(group_id));
+        auto& feeds = cfg->groups[group_id].feeds;
+        for (size_t feed_id = 0; feed_id < feeds.size(); ++feed_id)
+            network_manager.add_receiver(group_id, feeds[feed_id].multicast_group,
+                                         feeds[feed_id].multicast_port, feeds.size());
+    }
 
     std::cout << std::format("Starting at: {:%F %T}\n",
                              std::chrono::time_point_cast<std::chrono::microseconds>(

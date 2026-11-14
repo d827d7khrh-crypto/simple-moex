@@ -47,6 +47,9 @@ class ThreadPool
         task_cv_.notify_all();
     }
 
+    constexpr size_t size () const
+    { return workers_.size(); }
+
     template <typename F, typename... Args>
         requires std::invocable<F, Args...>
     auto enqueue (F&& f, Args&&... args)
@@ -72,9 +75,10 @@ class ThreadPool
         while (!tasks_.bounded_push(P_func.get())) {
             if (stop_source_.stop_requested()) {
                 P_func.reset();
+                delete P_lambda;
                 return std::future<return_type>{};
             }
-            std::this_thread::sleep_for(1us);
+            std::this_thread::sleep_for(10us);
         }
 
         P_func.release();
@@ -83,8 +87,8 @@ class ThreadPool
     }
 
   private:
-    using QueueType =
-      boost::lockfree::queue<std::function<void()>*, boost::lockfree::capacity<128>>;
+    using QueueCapacity = boost::lockfree::capacity<512>;
+    using QueueType     = boost::lockfree::queue<std::function<void()>*, QueueCapacity>;
 
     QueueType tasks_;
     std::stop_source stop_source_;
