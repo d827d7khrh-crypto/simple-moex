@@ -9,7 +9,7 @@ namespace fast
 {
 
 // ============================================================================
-// Парсер XML-файла шаблонов FIX FAST (spectra-templates.xml)
+// The XML template file parser. (FAST)
 // ============================================================================
 
 class FastTemplatesParser
@@ -43,8 +43,6 @@ class FastTemplatesParser
     bool parse_template_element (xmlpp::Element* template_elem);
     bool parse_field_element (xmlpp::Element* field_elem, FieldDefinition& field_def);
     bool parse_sequence_element (xmlpp::Element* seq_elem, SequenceDefinition& seq_def);
-    bool parse_nested_sequence_element (xmlpp::Element* seq_elem,
-                                        NestedSequenceDefinition& seq_def);
 
     // XML utility
     static std::string get_attribute (xmlpp::Element* elem, const std::string& attr_name);

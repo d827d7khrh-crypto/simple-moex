@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <ranges>
 #include <iostream>
 
 namespace fast
@@ -63,65 +64,12 @@ struct FieldDefinition
     FieldType type;
     Presence presence = Presence::Required;
     Charset charset   = Charset::Default;
-    std::optional<std::string> constant_value; // Если задано — константа
+    // for constant operator, holds a value
+    std::optional<std::string> constant_value;
 
     // for the late data binding
-    bool is_constant () const
+    constexpr bool is_constant () const
     { return constant_value.has_value(); }
-};
-
-// ============================================================================
-// Nested Sequence Definition
-// ============================================================================
-
-struct NestedSequenceDefinition
-{
-    std::string name; // name of nested sequence. Example - Group
-    int length_tag;   // FIX-tag of elements counter
-    Presence presence = Presence::Required;
-    std::vector<FieldDefinition> fields;
-    std::vector<NestedSequenceDefinition> nested_sequences;
-
-    // Quick search fields by name inside a nested sequence
-    const FieldDefinition* find_field_by_name (const std::string& name) const
-    {
-        for (const auto& f : fields) {
-            if (f.name == name) return &f;
-        }
-        return nullptr;
-    }
-
-    const FieldDefinition* find_field_by_id (int tag_id) const
-    {
-        for (const auto& f : fields) {
-            if (f.id == tag_id) return &f;
-        }
-        return nullptr;
-    }
-
-    const NestedSequenceDefinition*
-    find_nested_sequence_by_name (const std::string& name) const
-    {
-        for (const auto& ns : nested_sequences) {
-            if (ns.name == name) return &ns;
-        }
-        return nullptr;
-    }
-
-    void print (std::ostream& os, int indent = 0) const
-    {
-        std::string indent_str(indent, ' ');
-        os << indent_str << "NestedSequence: " << name << " (count_tag=" << length_tag << ", "
-           << presence_to_string(presence) << ")\n";
-        os << indent_str << "  Fields:\n";
-        for (const auto& f : fields) {
-            os << indent_str << "    [" << presence_to_string(f.presence) << "] " << f.name
-               << " (tag=" << f.id << ", " << field_type_to_string(f.type) << ")\n";
-        }
-        for (const auto& ns : nested_sequences) {
-            ns.print(os, indent + 4);
-        }
-    }
 };
 
 // ============================================================================
@@ -130,36 +78,62 @@ struct NestedSequenceDefinition
 
 struct SequenceDefinition
 {
+    friend class FastTemplatesParser;
+
     std::string name; // sequence name (example, "MDEntries")
     int length_tag;   // FIX-tag of the elements counter (example, NoMDEntries = 268)
     Presence presence = Presence::Required;
-    std::vector<FieldDefinition> fields;
-    std::vector<NestedSequenceDefinition> nested_sequences;
+    bool is_nested    = false;
+
+  private:
+    std::vector<FieldDefinition> fields_;
+    std::vector<SequenceDefinition> nested_;
+
+  public:
+    constexpr decltype(fields_) const& fields () const
+    { return fields_; }
+
+    constexpr decltype(nested_) const& nested () const
+    { return nested_; }
 
     // Quick fields searching inside a sequence
-    const FieldDefinition* find_field_by_name (const std::string& name) const
+    constexpr const FieldDefinition* find_field (std::string const& name) const
     {
-        for (const auto& f : fields) {
-            if (f.name == name) return &f;
-        }
-        return nullptr;
+        auto it = std::ranges::find(fields_, name, &FieldDefinition::name);
+        return it != fields_.cend() ? &*it : nullptr;
     }
 
-    const FieldDefinition* find_field_by_id (int tag_id) const
+    constexpr const FieldDefinition* find_field (int tag_id) const
     {
-        for (const auto& f : fields) {
-            if (f.id == tag_id) return &f;
-        }
-        return nullptr;
+        auto it = std::ranges::find(fields_, tag_id, &FieldDefinition::id);
+        return it != fields_.cend() ? &*it : nullptr;
     }
 
-    const NestedSequenceDefinition*
-    find_nested_sequence_by_name (const std::string& name) const
+    constexpr const SequenceDefinition* find_nested (std::string const& name) const
     {
-        for (const auto& ns : nested_sequences) {
-            if (ns.name == name) return &ns;
+        auto it = std::ranges::find(nested_, name, &SequenceDefinition::name);
+        return it != nested_.cend() ? &*it : nullptr;
+    }
+
+    constexpr const SequenceDefinition* find_nested (int length_tag) const
+    {
+        auto it = std::ranges::find(nested_, length_tag, &SequenceDefinition::length_tag);
+        return it != nested_.cend() ? &*it : nullptr;
+    }
+
+    void print (std::ostream& os, int indent = 0) const
+    {
+        std::string indent_str(indent, ' ');
+        os << indent_str << (is_nested ? "NestedSequence: " : "Sequence: ") << name
+           << " (count_tag=" << length_tag << ", " << presence_to_string(presence) << ")\n";
+        os << indent_str << "  Fields:\n";
+        for (const auto& f : fields_) {
+            os << indent_str << "    [" << presence_to_string(f.presence) << "] " << f.name
+               << " (tag=" << f.id << ", " << field_type_to_string(f.type) << ")\n";
         }
-        return nullptr;
+        for (const auto& ns : nested_) {
+            ns.print(os, indent + 4);
+        }
     }
 };
 
@@ -169,34 +143,39 @@ struct SequenceDefinition
 
 struct TemplateDefinition
 {
+    friend class FastTemplatesParser;
+
     std::string name; // template name (example, "DefaultIncrementalRefreshMessage")
     int id;           // template ID FIX FAST (example, 31)
+
+  private:
     std::vector<FieldDefinition> fields;
     std::vector<SequenceDefinition> sequences;
 
+  public:
     // Quick fields searching in templates.
-    const FieldDefinition* find_field_by_name (const std::string& name) const
+    constexpr const FieldDefinition* find_field (std::string const& name) const
     {
-        for (const auto& f : fields) {
-            if (f.name == name) return &f;
-        }
-        return nullptr;
+        auto it = std::ranges::find(fields, name, &FieldDefinition::name);
+        return it != fields.cend() ? &*it : nullptr;
     }
 
-    const FieldDefinition* find_field_by_id (int tag_id) const
+    constexpr const FieldDefinition* find_field (int tag_id) const
     {
-        for (const auto& f : fields) {
-            if (f.id == tag_id) return &f;
-        }
-        return nullptr;
+        auto it = std::ranges::find(fields, tag_id, &FieldDefinition::id);
+        return it != fields.cend() ? &*it : nullptr;
     }
 
-    const SequenceDefinition* find_sequence_by_name (const std::string& name) const
+    constexpr const SequenceDefinition* find_sequence (std::string const& name) const
     {
-        for (const auto& s : sequences) {
-            if (s.name == name) return &s;
-        }
-        return nullptr;
+        auto it = std::ranges::find(sequences, name, &SequenceDefinition::name);
+        return it != sequences.cend() ? &*it : nullptr;
+    }
+
+    constexpr const SequenceDefinition* find_sequence (int length_tag) const
+    {
+        auto it = std::ranges::find(sequences, length_tag, &SequenceDefinition::length_tag);
+        return it != sequences.cend() ? &*it : nullptr;
     }
 
     void print (std::ostream& os = std::cout, int indent = 0) const
@@ -216,12 +195,12 @@ struct TemplateDefinition
             os << indent_str << "    Sequence: " << s.name << " (count_tag=" << s.length_tag
                << ", " << presence_to_string(s.presence) << ")\n";
             os << indent_str << "      Fields:\n";
-            for (const auto& f : s.fields) {
+            for (const auto& f : s.fields()) {
                 os << indent_str << "        [" << presence_to_string(f.presence) << "] "
                    << f.name << " (tag=" << f.id << ", " << field_type_to_string(f.type)
                    << ")\n";
             }
-            for (const auto& ns : s.nested_sequences) {
+            for (const auto& ns : s.nested()) {
                 ns.print(os, indent + 8);
             }
         }
@@ -237,13 +216,15 @@ class TemplatesDictionary
   public:
     std::string namespace_name; // the namespace attribute of XML
 
-    // Все шаблоны
+  private:
+    // Parsed templates.
     std::vector<TemplateDefinition> templates;
 
     // quick access indexes
     std::unordered_map<std::string, size_t> name_index; // name -> index
     std::unordered_map<int, size_t> id_index;           // template id -> index
 
+  public:
     // Add a template
     void add_template (TemplateDefinition tpl)
     {
@@ -254,19 +235,17 @@ class TemplatesDictionary
     }
 
     // Lookup by Name
-    const TemplateDefinition* find_by_name (const std::string& name) const
+    constexpr const TemplateDefinition* find (std::string const& name) const
     {
         auto it = name_index.find(name);
-        if (it != name_index.end()) return &templates[it->second];
-        return nullptr;
+        return it != name_index.end() ? &templates[it->second] : nullptr;
     }
 
     // Lookup by Id
-    const TemplateDefinition* find_by_id (int id) const
+    constexpr const TemplateDefinition* find (int id) const
     {
         auto it = id_index.find(id);
-        if (it != id_index.end()) return &templates[it->second];
-        return nullptr;
+        return it != id_index.end() ? &templates[it->second] : nullptr;
     }
 
     void print (std::ostream& os = std::cout) const

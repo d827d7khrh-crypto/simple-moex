@@ -26,7 +26,7 @@ std::string to_string ();
 namespace config
 {
 
-constexpr static inline const size_t WORKERS_THREADS       = 12;
+constexpr static inline const size_t WORKERS_THREADS       = 8;
 constexpr static inline const char MOEX_EXCHANGE[]         = "MOEX";
 constexpr static inline const char MOEX_EXCHANGE_ASTS[]    = "ASTS";
 constexpr static inline const char MOEX_EXCHANGE_SPECTRA[] = "SPECTRA";
@@ -39,7 +39,14 @@ struct MulticastSubscription
 {
     std::string name; // Subgroup name (e.g., "A", "B")
     std::string multicast_group;
+    std::string source_ip;
     uint16_t multicast_port = 0;
+};
+
+struct HistoricalReplay
+{
+    std::string address;
+    uint16_t port = 0;
 };
 
 inline std::ostream& operator<<(std::ostream& os, MulticastSubscription const& ms)
@@ -57,6 +64,7 @@ struct FeedGroup
 {
     std::string name; // Group name (e.g., "FEED_1")
     std::vector<MulticastSubscription> feeds;
+    std::vector<HistoricalReplay> replay;
 };
 
 inline std::ostream& operator<<(std::ostream& os, FeedGroup const& g)

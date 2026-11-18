@@ -32,10 +32,11 @@ pkg_check_modules(LIBXMLXX REQUIRED IMPORTED_TARGET libxml++-5.0)
 add_library(project_headers INTERFACE)
 
 target_include_directories(project_headers INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/thread_pool>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/config>"
-    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/misc>"
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/utility>"
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/thread_pool>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/fix_fast_parser>"
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/message_handler>"
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/receiver>"
 )
 

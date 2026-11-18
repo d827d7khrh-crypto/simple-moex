@@ -27,12 +27,17 @@ name = "FEED_1"
 name = "A"
 multicast_group = "239.195.5.65"
 multicast_port = 36065
+source_ip = "91.203.253.232"
 
 [[groups.feeds]]
 name = "B"
 multicast_group = "239.195.133.65"
 multicast_port = 37065
+source_ip = "91.203.255.232"
 
+[[groups.replay]]
+address = [ "91.203.253.232", "91.203.255.232" ]
+port = 7027
 
 #[[groups]]
 #name = "FEED_2"

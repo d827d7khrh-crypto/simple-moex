@@ -274,16 +274,15 @@ bool FastTemplatesParser::parse_sequence_element (xmlpp::Element* seq_elem,
                 seq_def.length_tag = std::stoi(get_attribute(child_elem, "id"));
             } else if (tag_name == "sequence") {
                 // nested sequence recusive
-                NestedSequenceDefinition nested_seq_def;
-                if (!parse_nested_sequence_element(child_elem, nested_seq_def)) {
-                    return false;
-                }
-                seq_def.nested_sequences.push_back(std::move(nested_seq_def));
+                SequenceDefinition nested_seq_def;
+                nested_seq_def.is_nested = true;
+                if (!parse_sequence_element(child_elem, nested_seq_def)) { return false; }
+                seq_def.nested_.push_back(std::move(nested_seq_def));
             } else {
                 // the reset is sequence fields
                 FieldDefinition field_def;
                 if (!parse_field_element(child_elem, field_def)) { return false; }
-                seq_def.fields.push_back(std::move(field_def));
+                seq_def.fields_.push_back(std::move(field_def));
             }
         }
     }
@@ -295,56 +294,6 @@ bool FastTemplatesParser::parse_sequence_element (xmlpp::Element* seq_elem,
 
     if (seq_def.length_tag == 0) {
         set_error("Sequence '" + seq_def.name + "' has no length (count) element");
-        return false;
-    }
-
-    return true;
-}
-
-// ============================================================================
-// Parsing the element of the nested sequence <sequence>
-// ============================================================================
-
-bool FastTemplatesParser::parse_nested_sequence_element (xmlpp::Element* seq_elem,
-                                                         NestedSequenceDefinition& seq_def)
-{
-    seq_def.name = get_attribute(seq_elem, "name");
-
-    auto presence_attr = get_attribute(seq_elem, "presence");
-    if (!presence_attr.empty()) { seq_def.presence = parse_presence(presence_attr); }
-
-    // iterate over nested sequence elements
-    auto children = seq_elem->get_children();
-    for (auto* child : children) {
-        if (auto* child_elem = dynamic_cast<xmlpp::Element*>(child)) {
-            std::string tag_name = child_elem->get_name();
-
-            // the first element with length defines counter's tag
-            if (tag_name == "length") {
-                seq_def.length_tag = std::stoi(get_attribute(child_elem, "id"));
-            } else if (tag_name == "sequence") {
-                // nested sequence recursive
-                NestedSequenceDefinition nested_seq_def;
-                if (!parse_nested_sequence_element(child_elem, nested_seq_def)) {
-                    return false;
-                }
-                seq_def.nested_sequences.push_back(std::move(nested_seq_def));
-            } else {
-                // the rest are sequence fields
-                FieldDefinition field_def;
-                if (!parse_field_element(child_elem, field_def)) { return false; }
-                seq_def.fields.push_back(std::move(field_def));
-            }
-        }
-    }
-
-    if (seq_def.name.empty()) {
-        set_error("Nested sequence element has no name attribute");
-        return false;
-    }
-
-    if (seq_def.length_tag == 0) {
-        set_error("Nested sequence '" + seq_def.name + "' has no length (count) element");
         return false;
     }
 

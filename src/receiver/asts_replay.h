@@ -13,6 +13,11 @@ class TCPReplay : public Replay
     constexpr static inline const char name_[] = "TCPReplay ASTS";
 
   public:
+    explicit TCPReplay (std::vector<EndpointRef> const& endpoints)
+      : Replay(endpoints)
+    {
+    }
+
     BackfillRes backfill (uint32_t first, uint32_t last) override
     {
         std::cout << std::format("[Recovery {:s}] Backfill the gap [{:d},{:d})\n", name_,

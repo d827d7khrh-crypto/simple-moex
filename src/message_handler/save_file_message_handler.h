@@ -24,21 +24,21 @@ class SaveFileMessageHandler
     {
     }
 
-    void operator()(const fast::FastMessage& msg)
+    void operator()(fast::FastMessagePtr msg)
     {
         std::string local_namespace;
         std::ostream* os;
         if (stream_.index() == 0) {
             os              = &std::get<0>(stream_).get();
-            local_namespace = msg.local_namespace_name + ": ";
+            local_namespace = msg->local_namespace_name + ": ";
         } else {
-            if (std::get<1>(stream_).contains(msg.local_namespace_name)) {
-                os = std::get<1>(stream_).at(msg.local_namespace_name).get();
+            if (std::get<1>(stream_).contains(msg->local_namespace_name)) {
+                os = std::get<1>(stream_).at(msg->local_namespace_name).get();
             } else {
-                std::filesystem::path filename{msg.local_namespace_name + "_feed.txt"};
+                std::filesystem::path filename{msg->local_namespace_name + "_feed.txt"};
                 if (std::ofstream ofs{filename}) {
                     os = std::get<1>(stream_)
-                           .try_emplace(msg.local_namespace_name,
+                           .try_emplace(msg->local_namespace_name,
                                         std::make_unique<std::ofstream>(std::move(ofs)))
                            .first->second.get();
                 } else {
@@ -48,12 +48,12 @@ class SaveFileMessageHandler
         }
 
         auto str =
-          std::format("{}{}::{}({}) -> {}, {}\n", local_namespace, msg.namespace_name,
-                      msg.template_name, msg.template_id,
+          std::format("{}{}::{}({}) -> {}, {}\n", local_namespace, msg->namespace_name,
+                      msg->template_name, msg->template_id,
                       std::format("udp='{:%F %T}'",
                                   std::chrono::time_point_cast<std::chrono::microseconds>(
                                     std::chrono::system_clock::time_point(
-                                      std::chrono::system_clock::duration(msg.time_us)))),
+                                      std::chrono::system_clock::duration(msg->time_us)))),
                       std::format("now='{:%F %T}'",
                                   std::chrono::time_point_cast<std::chrono::microseconds>(
                                     std::chrono::system_clock::now())));
@@ -93,8 +93,8 @@ class SaveFileMessageHandler
             if (!fields.empty()) { std::ranges::for_each(fields, pf); }
         };
 
-        pl(msg.fields);
-        if (!msg.sequences.empty()) {
+        pl(msg->fields);
+        if (!msg->sequences.empty()) {
             auto ps = [&] (auto& s) {
                 str.append(" - ")
                   .append(s.name)
@@ -112,7 +112,7 @@ class SaveFileMessageHandler
                     pl(grp.fields);
                 };
             };
-            std::ranges::for_each(msg.sequences, ps);
+            std::ranges::for_each(msg->sequences, ps);
         }
 
         (*os) << str << std::endl;

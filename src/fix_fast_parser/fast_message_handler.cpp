@@ -263,7 +263,7 @@ void FastMessageHandler::messages_consumer (std::stop_token stoken)
               std::atomic_load_explicit(&message_handler_, std::memory_order_relaxed);
             if (handler && *handler) {
                 try {
-                    (*handler)(*message);
+                    (*handler)(message);
                 }
                 catch (std::exception const &e) {
                     auto handler =
@@ -297,7 +297,7 @@ void FastMessageHandler::messages_consumer (std::stop_token stoken)
     messages_queue_.consume_all([this] (FastMessagePtr message) {
         if (message_handler_) {
             try {
-                (*message_handler_)(*message);
+                (*message_handler_)(message);
             }
             catch (...) {
                 // Ignore exceptions during drain

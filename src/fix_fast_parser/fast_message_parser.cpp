@@ -161,7 +161,7 @@ FastFieldValue FastMessageDecoder::extract_value (const mfast::field_cref& field
 
     case mfast::field_type_decimal: {
         mfast::decimal_cref ref(field_ref);
-        return static_cast<double>(ref);
+        return Decimal64{ref.mantissa(), ref.exponent()};
     }
 
     case mfast::field_type_ascii_string: {
@@ -205,6 +205,9 @@ FastField FastMessageDecoder::extract_field (const mfast::field_cref& field_ref)
     ff.name   = field_ref.name() ? field_ref.name() : "";
     ff.tag_id = static_cast<int>(field_ref.id());
     ff.value  = extract_value(field_ref);
+    ff.type   = field_ref.field_type();
+    if (auto* inst = field_ref.instruction())
+        ff.is_constant = inst->field_operator() == mfast::operator_constant;
     return ff;
 }
 
@@ -230,10 +233,10 @@ FastSequence FastMessageDecoder::extract_sequence (const mfast::sequence_cref& s
     for (auto elem_it = seq_ref.begin(); elem_it != seq_ref.end(); ++elem_it) {
         const auto num_fields = elem_it->num_fields();
         auto& group           = seq.groups.emplace_back();
-        group.fields.reserve(num_fields);
+        group.reserve(num_fields);
         // Each sequence element is an aggregate
         for (size_t i = 0; i < num_fields; ++i) {
-            group.fields.emplace_back(extract_field((*elem_it)[i]));
+            group.emplace_back(extract_field((*elem_it)[i]));
         }
     }
 

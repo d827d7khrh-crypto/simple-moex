@@ -15,6 +15,9 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <boost/lockfree/queue.hpp>
 
+#include <boost/asio/ip/address.hpp>
+#include <boost/asio/ip/tcp.hpp>
+
 #include "udp_multicast_receiver.h"
 #include "fast_message_parser.h"
 #include "thread_pool.h"
@@ -29,7 +32,7 @@ namespace fast
 
 /// Message processing callback.
 /// msg             — decoded FAST message (valid only during callback execution)
-using MessageHandlerF = std::function<void(const FastMessage &msg)>;
+using MessageHandlerF = std::function<void(FastMessagePtr msg)>;
 using MessageHandler  = std::shared_ptr<MessageHandlerF>;
 
 /// Callback invoked when a message cannot be decoded
@@ -90,6 +93,18 @@ class FastMessageHandler
         if (packet_sequencing_) packet_sequencing_->try_emplace(feed_group);
     }
 
+    constexpr void add_historical_replay (uint16_t feed_group, std::string const &address,
+                                          uint16_t port)
+    {
+        auto const &replay = historical_replay_
+                               .try_emplace(feed_group,
+                                            boost::asio::ip::tcp::endpoint{
+                                              boost::asio::ip::make_address(address), port})
+                               .first->second;
+        if (packet_sequencing_)
+            (*packet_sequencing_)[feed_group].add_historical_replay(std::cref(replay));
+    }
+
     // ------------------------------------------------------------------
     // Recovery buffers
     // ------------------------------------------------------------------
@@ -127,6 +142,10 @@ class FastMessageHandler
     // Callbacks
     MessageHandler message_handler_;
     MessageErrorHandler error_handler_;
+
+    // The historical replay endpoints (if any)
+    using HistoricalReplayMap = std::unordered_map<uint16_t, boost::asio::ip::tcp::endpoint>;
+    HistoricalReplayMap historical_replay_;
 
     // The only stop source for all threads / waits
     std::stop_source threads_stop_source_;

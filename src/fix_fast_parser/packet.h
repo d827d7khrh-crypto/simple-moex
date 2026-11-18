@@ -14,6 +14,10 @@
 #include <optional>
 #include <future>
 #include <chrono>
+
+#include <boost/asio/ip/address.hpp>
+#include <boost/asio/ip/tcp.hpp>
+
 #include "recovery.h"
 #include "spectra_replay.h"
 #include "asts_replay.h"
@@ -47,7 +51,7 @@ class PacketSequencing
     using Buffer        = misc::BoundedBuffer;
     using PacketBuffer  = misc::PacketBuffer;
     using DifferedList  = misc::SortedForwardList<SequencingBuffer>;
-    using LookahedArray = std::array<Buffer, 16>;
+    using LookahedArray = std::array<Buffer, 10>;
 
     friend std::ostream& operator<<(std::ostream& os, PacketSequencing::LookahedArray const& a)
     {
@@ -104,11 +108,14 @@ class PacketSequencing
     template <typename F>
     std::optional<BuffersMap> operator()(PacketBuffer& buffer, F&& recovery_fn)
     {
+        constexpr static const uint32_t INVALID_PACKET_NUMBER =
+          std::numeric_limits<uint32_t>::max();
+
         // Extract a sequence number form the front of packet.
         const uint32_t packet_number = buffer.buffer_.size() >= sizeof(uint32_t)
                                          ? *reinterpret_cast<uint32_t*>(buffer.buffer_.begin())
-                                         : 0;
-        if (packet_number == 0) {
+                                         : INVALID_PACKET_NUMBER;
+        if (packet_number == INVALID_PACKET_NUMBER) {
             // error: invalid packet length
             return std::nullopt;
         }
@@ -249,6 +256,9 @@ class PacketSequencing
     constexpr iterator insert_iterator (uint32_t sequence_number)
     { return iterator(std::ref(lookahead_), sequence_number); }
 
+    constexpr void add_historical_replay (recov::Replay::EndpointRef ep)
+    { historical_replay_.push_back(std::move(ep)); }
+
   private:
     // Fills `look_ahead_result.first' buffers with sequentially ordered values extracted
     // from look-ahead array and possibly deferred list.
@@ -311,9 +321,9 @@ class PacketSequencing
         std::unique_ptr<Replay> replay;
 
         if (config::cfg->exchange_branch == config::MOEX_EXCHANGE_ASTS)
-            replay = std::make_unique<asts::TCPReplay>();
+            replay = std::make_unique<asts::TCPReplay>(historical_replay_);
         else if (config::cfg->exchange_branch == config::MOEX_EXCHANGE_SPECTRA)
-            replay = std::make_unique<spectra::TCPReplay>();
+            replay = std::make_unique<spectra::TCPReplay>(historical_replay_);
 
         if (replay) {
             if (BackfillRes res = RecoveryFeed{std::move(replay)}(first, last)) {
@@ -331,6 +341,8 @@ class PacketSequencing
 
         return last;
     }
+
+    std::vector<recov::Replay::EndpointRef> historical_replay_;
 
     std::future<recovery_task_result> recovery_result_;
 

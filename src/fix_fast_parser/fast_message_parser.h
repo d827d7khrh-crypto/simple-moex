@@ -9,6 +9,7 @@
 #include <mfast/group_ref.h>
 #include <mfast/field_visitor.h>
 #include <boost/variant.hpp>
+#include <boost/decimal.hpp>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -29,20 +30,25 @@
 namespace fast
 {
 
+using Decimal64 = boost::decimal::decimal64_t;
+using Decimal32 = boost::decimal::decimal32_t;
+
 // ============================================================================
 // FAST message field value types (boost::variant)
 // ============================================================================
 
 /// Value of a single FAST message field
 using FastFieldValue =
-  boost::variant<boost::blank, int32_t, int64_t, uint32_t, uint64_t, double, std::string>;
+  boost::variant<boost::blank, int32_t, int64_t, uint32_t, uint64_t, Decimal64, std::string>;
 
 /// Parsed message field
 struct FastField
 {
-    std::string name;     // Field name (e.g., "Symbol")
-    int tag_id = -1;      // FIX tag ID
-    FastFieldValue value; // Field value
+    std::string name;              // Field name (e.g., "Symbol")
+    FastFieldValue value;          // Field value
+    mfast::field_type_enum_t type; // Field type as an enum
+    int tag_id       = -1;         // FIX tag ID
+    bool is_constant = false;
 
     constexpr bool has_value () const
     { return value.which() != 0; }
@@ -82,14 +88,15 @@ struct FastField
         else
             return std::nullopt;
     }
-    constexpr std::optional<double> to_double () const
+    constexpr std::optional<Decimal64> to_decimal () const
     {
-        if (auto* dbl_ptr = boost::get<double>(&value))
+        if (auto* dbl_ptr = boost::get<Decimal64>(&value))
             return *dbl_ptr;
         else
             return std::nullopt;
     }
-    template <typename T> constexpr std::optional<T> to () const
+    template <typename T>
+    constexpr std::optional<T> to () const
     {
         if (auto* ptr = boost::get<T>(&value))
             return *ptr;
@@ -98,6 +105,12 @@ struct FastField
     }
 };
 
+using FieldGroup  = std::vector<FastField>;
+using FieldGroups = std::vector<FieldGroup>;
+
+struct FastSequence;
+using FastSequences = std::vector<FastSequence>;
+
 /// Parsed message sequence
 struct FastSequence
 {
@@ -105,14 +118,8 @@ struct FastSequence
     size_t elem_count = 0;      // Full amount of elements in a sequence group
     std::string length_name;    // length field name
     uint64_t length_tag_id = 0; // FIX tag for element count
-    // Each sequence consists of `group_count' field groups
-    struct FieldGroup
-    {
-        using fields_t = std::vector<FastField>;
-        fields_t fields;
-    };
-    std::vector<FieldGroup> groups;   // Fields in this sequence
-    std::vector<FastSequence> nested; // Nested sequences
+    FieldGroups groups;         // Fields in this sequence
+    FastSequences nested;       // Nested sequences
 };
 
 // ============================================================================
@@ -128,8 +135,8 @@ struct FastMessage
     std::string template_name;                     // Template name
     std::string namespace_name{DEFAULT_NAMESPACE}; // Namespace name
     std::string local_namespace_name;              // Local Namespace (maddr:port)
-    std::vector<FastField> fields;                 // Top-level fields
-    std::vector<FastSequence> sequences;           // Sequences
+    FieldGroup fields;                             // Top-level fields
+    FastSequences sequences;                       // Sequences
 
     /// Find a field by name (top-level only)
     const FastField* find_field_by_name (const std::string& name) const;

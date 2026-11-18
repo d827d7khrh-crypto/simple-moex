@@ -5,8 +5,9 @@
 #include <format>
 #include "udp_multicast_receiver.h"
 #include "fast_message_handler.h"
-#include "save_file_message_handler.h"
-#include "do_nothing_message_handler.h"
+// #include "save_file_message_handler.h"
+// #include "do_nothing_message_handler.h"
+#include "stream_message_handler.h"
 #include "config.h"
 #include "strings.h"
 
@@ -48,10 +49,11 @@ int main (int argc, char** argv)
         message_handler        = std::make_unique<fast::FastMessageHandler>(template_filepath);
 
         // Messages handler to save all FIX structures to files
-        // message_handler->on_message(SaveFileMessageHandler{});
-
+        //// message_handler->on_message(SaveFileMessageHandler{});
         // Message hadler to just output timestamps
-        message_handler->on_message(DoNothingMessageHandler{});
+        //// message_handler->on_message(DoNothingMessageHandler{});
+
+        message_handler->on_message(hndl::StreamMessageHandler{});
 
         // Simple group based messages handler
         // message_handler->on_message(GroupsMessageHandler{cfg->groups});
@@ -74,6 +76,9 @@ int main (int argc, char** argv)
         for (size_t feed_id = 0; feed_id < feeds.size(); ++feed_id)
             network_manager.add_receiver(group_id, feeds[feed_id].multicast_group,
                                          feeds[feed_id].multicast_port, feeds.size());
+        for (auto& replay : cfg->groups[group_id].replay)
+            message_handler->add_historical_replay(uint16_t(group_id), replay.address,
+                                                   replay.port);
     }
 
     std::cout << std::format("Starting at: {:%F %T}\n",
